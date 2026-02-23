@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicLyricApp - 主页</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #263238;
+        }
+        .app-header {
+            background-color: #1a237e;
+            color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+        .app-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+            background-color: white;
+            padding-left: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .nav-tabs .nav-item .nav-link {
+            color: #455a64;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .nav-tabs .nav-item .nav-link:hover {
+            color: #1a237e;
+            background-color: #f0f4f8;
+        }
+        .nav-tabs .nav-item .nav-link.active {
+            color: #1a237e;
+            border-bottom-color: #1a237e;
+            background-color: #f8f9fa;
+        }
+        .main-content {
+            padding: 20px;
+            background-color: white;
+            min-height: 600px;
+        }
+        .section-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+        }
+        .section-title {
+            color: #1a237e;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: #1a237e;
+            box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+        }
+        .song-info {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .cover-preview {
+            width: 100%;
+            height: 120px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+        .lyric-content {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            border: 1px solid #dee2e6;
+        }
+        .status-bar {
+            background-color: #e9ecef;
+            padding: 10px 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .btn-primary {
+            background-color: #1a237e;
+            border-color: #1a237e;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #283593;
+            border-color: #283593;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(26, 35, 126, 0.2);
+        }
+        .btn-secondary {
+            background-color: #455a64;
+            border-color: #455a64;
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: #37474f;
+            border-color: #37474f;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(69, 90, 100, 0.2);
+        }
+        .form-control {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: #1a237e;
+            box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+        }
+        .form-select {
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-select:focus {
+            border-color: #1a237e;
+            box-shadow: 0 0 0 2px rgba(26, 35, 126, 0.1);
+        }
+        .parameter-group {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+        .parameter-group-title {
+            color: #455a64;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        .grid-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        .form-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-item label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #607d8b;
+            margin-bottom: 5px;
+        }
+        .form-check {
+            display: flex;
+            align-items: center;
+        }
+        .form-check-label {
+            margin-left: 8px;
+            font-size: 0.85rem;
+            color: #607d8b;
+        }
+    </style>
+</head>
+<body>
+    <!-- 应用头部 -->
+    <div class="app-header">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div class="app-title">MusicLyricApp v7.2</div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light" id="batch-btn">批量操作</button>
+                <button class="btn btn-sm btn-outline-light" id="version-check-btn">检查更新</button>
+                <button class="btn btn-sm btn-outline-light" id="shortcuts-btn">快捷键</button>
+                <button class="btn btn-sm btn-outline-light" id="homepage-btn">主页</button>
+                <button class="btn btn-sm btn-outline-light" id="wiki-btn">Wiki</button>
+                <button class="btn btn-sm btn-outline-light" id="issues-btn">反馈问题</button>
+                <button class="btn btn-sm btn-outline-light" id="about-btn">关于</button>
+                <button class="btn btn-sm btn-outline-light" id="settings-btn">设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航选项卡 -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link active" href="index.html">主页</a>
+        </li>
+    </ul>
+
+    <!-- 主内容区 -->
+    <div class="container-fluid main-content">
+        <!-- 搜索区 -->
+        <div class="section-card">
+            <div class="section-title">搜索区</div>
+            <div class="d-flex flex-wrap align-items-end gap-3">
+                <div class="form-item">
+                    <label>搜索源</label>
+                    <select class="form-select" id="search-source">
+                        <option>网易云</option>
+                        <option>QQ音乐</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label>搜索类型</label>
+                    <select class="form-select" id="search-type">
+                        <option>单曲</option>
+                        <option>专辑</option>
+                        <option>歌单</option>
+                    </select>
+                </div>
+                <div class="form-item flex-grow-1">
+                    <label>搜索输入</label>
+                    <div class="position-relative">
+                        <input type="text" class="form-control" placeholder="输入歌曲ID、链接或关键词..." id="main-search-input">
+                        <div class="input-group-append position-absolute right-0 top-0 h-100 flex items-center pr-3">
+                            <button class="btn btn-link text-muted" type="button" id="history-btn">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-clock-history" viewBox="0 0 16 16">
+                                    <path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022l-.074.997zm2.004.45a7.003 7.003 0 0 0-.985-.299l.219-.976c.383.086.76.2 1.126.342l-.36.933zm1.37.71a7.01 7.01 0 0 0-.439-.27l.493-.87a8.025 8.025 0 0 1 .979.654l-.615.789a6.996 6.996 0 0 0-.418-.302zm1.834 1.79a6.99 6.99 0 0 0-.653-.796l.719-.606a8.012 8.012 0 0 1 .803.882l-.875.485c-.233-.074-.468-.127-.705-.16l.015-.025zm.746 1.352a7.08 7.08 0 0 0-.76.668l-.781.253a8.02 8.02 0 0 1-.888-.041l.348-.926c.217.08.438.138.65.177zm3.04 1.149a7.866 7.866 0 0 1-1.333.645c.04-.2.082-.403.125-.61l.7-1.36a6.986 6.986 0 0 0-.761-.865zm.349-2.058c.184.18.338.38.443.595l.283-.585a8.083 8.083 0 0 1-.481-.581zm1.232 1.243c.118.14.232.283.345.429l-.528.84a8.027 8.027 0 0 1-.593-.27l.5-.863zm1.21 1.235c.11.163.21.33.301.505l-.859.252c-.09-.23-.184-.464-.282-.708zm0 1.655c-.086.2-.178.393-.276.576l.6.632a6.996 6.996 0 0 1-1.027.065zm-1.573 1.338c-.18.133-.363.255-.548.354l.649.649a8.02 8.02 0 0 1-1.162.024zm-1.664 1.215c-.248.08-.504.133-.76.162l.719.719a7.08 7.08 0 0 0 1.035-.052zm-1.59 1.128c-.243.06-.493.09-.749.09l.758.69a8.009 8.009 0 0 1-1.01.032zM7.5 5.25a.75.75 0 0 1 .75-.75h4.5a.75.75 0 0 1 0 1.5h-4.5a.75.75 0 0 1-.75-.75zM7 8a1 1 0 0 1 2 0v3a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-item d-flex align-items-center">
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="blur-search-checkbox">
+                        <label class="form-check-label" for="blur-search-checkbox">模糊搜索</label>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <button class="btn btn-primary" id="search-btn" title="Enter: 精确搜索 | Ctrl+Enter: 模糊搜索 | Ctrl+S: 保存结果">搜索</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 输出区 -->
+        <div class="section-card">
+            <div class="section-title">输出区</div>
+            <div class="grid-row">
+                <div class="form-item">
+                    <label>歌手</label>
+                    <input type="text" class="form-control" value="周杰伦" readonly>
+                </div>
+                <div class="form-item">
+                    <label>歌名</label>
+                    <input type="text" class="form-control" value="青花瓷" readonly>
+                </div>
+                <div class="form-item">
+                    <label>专辑</label>
+                    <input type="text" class="form-control" value="我很忙" readonly>
+                </div>
+            </div>
+            <div class="grid-row mt-3">
+                <div class="form-item">
+                    <label>封面</label>
+                    <div class="cover-preview">
+                        <span>封面预览</span>
+                    </div>
+                </div>
+                <div class="form-item">
+                    <label>直链</label>
+                    <input type="text" class="form-control" value="https://music.163.com/song?id=33911781" readonly>
+                </div>
+            </div>
+            <div class="mt-3">
+                <label>歌词内容</label>
+                <div class="lyric-content">
+                    [00:00.000] 作词：方文山
+                    [00:01.000] 作曲：周杰伦
+                    [00:02.000] 编曲：钟兴民
+                    [00:15.000] 素胚勾勒出青花笔锋浓转淡
+                    [00:19.000] 瓶身描绘的牡丹一如你初妆
+                    [00:23.000] 冉冉檀香透过窗心事我了然
+                    [00:27.000] 宣纸上走笔至此搁一半
+                    [00:31.000] 釉色渲染仕女图韵味被私藏
+                    [00:35.000] 而你嫣然的一笑如含苞待放
+                    [00:39.000] 你的美一缕飘散
+                    [00:41.000] 去到我去不了的地方
+                    [00:45.000] 天青色等烟雨
+                    [00:47.000] 而我在等你
+                    [00:49.000] 炊烟袅袅升起
+                    [00:51.000] 隔江千万里
+                    [00:53.000] 在瓶底书汉隶仿前朝的飘逸
+                    [00:57.000] 就当我为遇见你伏笔
+                    [01:01.000] 天青色等烟雨
+                    [01:03.000] 而我在等你
+                    [01:05.000] 月色被打捞起
+                    [01:07.000] 晕开了结局
+                    [01:09.000] 如传世的青花瓷自顾自美丽
+                    [01:13.000] 你眼带笑意
+                </div>
+            </div>
+        </div>
+
+        <!-- 参数调整区 -->
+        <div class="section-card">
+            <button class="btn btn-link text-left section-title w-100 d-flex justify-content-between align-items-center" data-bs-toggle="collapse" data-bs-target="#params-collapse">
+                <span>参数调整区</span>
+                <span class="badge bg-primary">▼</span>
+            </button>
+            
+            <div id="params-collapse" class="collapse show">
+                <!-- 歌词格式设置 -->
+                <div class="parameter-group">
+                    <div class="parameter-group-title">歌词格式</div>
+                    <div class="grid-row">
+                        <div class="form-item">
+                            <label>歌词格式</label>
+                            <select class="form-select" id="lyric-format">
+                                <option>交错</option>
+                                <option>独立</option>
+                                <option>合并</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label>歌词合并符</label>
+                            <input type="text" class="form-control" value="->" id="lyric-merge-separator">
+                        </div>
+                        <div class="form-item">
+                            <label>中文处理规则</label>
+                            <select class="form-select">
+                                <option>不额外处理</option>
+                                <option>强制简体</option>
+                                <option>强制繁体</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label>逐字歌词</label>
+                            <select class="form-select" id="verbatim-lyric">
+                                <option>不启用</option>
+                                <option>标准模式</option>
+                                <option>A2 模式</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 歌词处理设置 -->
+                <div class="parameter-group">
+                    <div class="parameter-group-title">歌词处理</div>
+                    <div class="grid-row">
+                        <div class="form-item">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" checked>
+                                <label class="form-check-label">跳过空白行</label>
+                            </div>
+                        </div>
+                        <div class="form-item">
+                            <label>译文缺省规则</label>
+                            <select class="form-select">
+                                <option>忽略展示</option>
+                                <option>展示空行</option>
+                                <option>填充原文</option>
+                            </select>
+                        </div>
+                        <div class="form-item">
+                            <label>译文匹配精度 (MS)</label>
+                            <input type="number" class="form-control" value="0" min="0" max="100">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 时间戳设置 -->
+                <div class="parameter-group">
+                    <div class="parameter-group-title">时间戳</div>
+                    <div class="grid-row">
+                        <div class="form-item">
+                            <label>LRC 时间戳格式</label>
+                            <input type="text" class="form-control" value="[mm:ss.SSS]">
+                        </div>
+                        <div class="form-item">
+                            <label>SRT 时间戳格式</label>
+                            <input type="text" class="form-control" value="HH:mm:ss,SS">
+                        </div>
+                        <div class="form-item">
+                            <label>毫秒截位规则</label>
+                            <select class="form-select">
+                                <option>四舍五入</option>
+                                <option>截位</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 输出设置 -->
+                <div class="parameter-group">
+                    <div class="parameter-group-title">输出设置</div>
+                    <div class="grid-row">
+                        <div class="form-item" style="grid-column: span 2;">
+                            <label>歌词类型</label>
+                            <table class="lyrics-type-table" style="width: 100%; border-collapse: collapse; margin-bottom: 15px;">
+                                <thead>
+                                    <tr style="background-color: #e9ecef;">
+                                        <th style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">启用</th>
+                                        <th style="padding: 8px; text-align: left; border: 1px solid #dee2e6;">歌词类型</th>
+                                        <th style="padding: 8px; text-align: left; border: 1px solid #dee2e6; width: 120px;">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;"><input type="checkbox" checked></td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">原文</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                            <button class="btn btn-sm btn-secondary">上移</button>
+                                            <button class="btn btn-sm btn-secondary">下移</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;"><input type="checkbox" checked></td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">原始译文</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                            <button class="btn btn-sm btn-secondary">上移</button>
+                                            <button class="btn btn-sm btn-secondary">下移</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;"><input type="checkbox"></td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">音译</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                            <button class="btn btn-sm btn-secondary">上移</button>
+                                            <button class="btn btn-sm btn-secondary">下移</button>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;"><input type="checkbox" checked></td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">中文译文</td>
+                                        <td style="padding: 8px; border: 1px solid #dee2e6;">
+                                            <button class="btn btn-sm btn-secondary">上移</button>
+                                            <button class="btn btn-sm btn-secondary">下移</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="grid-row mt-3">
+                        <div class="form-item">
+                            <label>输出格式</label>
+                            <select class="form-select">
+                                <option>LRC</option>
+                                <option>SRT</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 结果保存区 -->
+        <div class="section-card">
+            <div class="section-title">结果保存区</div>
+            <div class="grid-row">
+                <div class="form-item">
+                    <label>文件编码</label>
+                    <select class="form-select">
+                        <option>UTF-8</option>
+                        <option>UTF-8 BOM</option>
+                        <option>GBK</option>
+                    </select>
+                </div>
+                <div class="form-item">
+                    <label>保存路径</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" value="C:\\Users\\User\\Music\\Lyrics" readonly>
+                        <button class="btn btn-secondary">浏览</button>
+                    </div>
+                </div>
+            </div>
+            <div class="d-flex justify-content-center mt-4">
+                <button class="btn btn-primary" style="width: 200px;">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="container-fluid d-flex justify-content-between">
+            <div>就绪</div>
+            <div>版本 7.2 | © 2026 MusicLyricApp</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 搜索按钮点击事件
+        document.getElementById('search-btn').addEventListener('click', function() {
+            const searchText = document.getElementById('main-search-input').value.trim();
+            const isBlurSearch = document.getElementById('blur-search-checkbox').checked;
+            
+            if (!searchText) {
+                alert('请输入搜索内容');
+                return;
+            }
+            
+            if (isBlurSearch) {
+                // 打开模糊搜索页面，并传递搜索参数
+                const url = `blur-search.html?query=${encodeURIComponent(searchText)}`;
+                window.open(url, '_blank', 'width=900,height=600,top=100,left=100');
+            } else {
+                // 执行精确搜索
+                alert('开始搜索: ' + searchText);
+                // 这里可以添加实际的精确搜索逻辑
+            }
+        });
+
+
+
+        // 保存按钮点击事件
+        document.querySelector('.btn-primary[style="width: 200px;"]').addEventListener('click', function() {
+            alert('保存歌词');
+            // 这里可以添加实际的保存逻辑
+        });
+
+        // 折叠功能的动画效果
+        document.querySelector('[data-bs-toggle="collapse"]').addEventListener('click', function() {
+            const icon = this.querySelector('.badge');
+            if (icon.textContent === '▼') {
+                icon.textContent = '▶';
+            } else {
+                icon.textContent = '▼';
+            }
+        });
+
+        // 歌词类型的上移和下移功能
+        document.querySelectorAll('.btn-sm.btn-secondary').forEach(button => {
+            button.addEventListener('click', function() {
+                const row = this.closest('tr');
+                if (!row) return;
+
+                if (this.textContent === '上移') {
+                    const prevRow = row.previousElementSibling;
+                    if (prevRow && prevRow.tagName === 'TR') {
+                        row.parentNode.insertBefore(row, prevRow);
+                    }
+                } else if (this.textContent === '下移') {
+                    const nextRow = row.nextElementSibling;
+                    if (nextRow && nextRow.tagName === 'TR') {
+                        row.parentNode.insertBefore(nextRow, row);
+                    }
+                }
+            });
+        });
+
+        // 批量操作按钮点击事件
+        document.getElementById('batch-btn').addEventListener('click', function() {
+            window.open('batch.html', '_blank', 'width=1000,height=700,top=100,left=100');
+        });
+
+        // 设置按钮点击事件
+        document.getElementById('settings-btn').addEventListener('click', function() {
+            window.open('config.html', '_blank', 'width=900,height=700,top=100,left=100');
+        });
+
+        // 版本检查按钮点击事件
+        document.getElementById('version-check-btn').addEventListener('click', function() {
+            alert('正在检查更新...\n\n当前版本: v7.2\n\n已是最新版本');
+        });
+
+        // 快捷键按钮点击事件
+        document.getElementById('shortcuts-btn').addEventListener('click', function() {
+            const shortcuts = `快捷键说明:\n\n精确搜索: \t Enter\n模糊搜索: \t Ctrl + Enter\n保存结果: \t Ctrl + S`;
+            alert(shortcuts);
+        });
+
+        // 关于按钮点击事件
+        document.getElementById('about-btn').addEventListener('click', function() {
+            const about = `MusicLyricApp v7.2\n\n一个功能强大的音乐歌词获取工具\n支持网易云音乐和QQ音乐\n\n© 2026 MusicLyricApp`;
+            alert(about);
+        });
+
+        // 主页按钮点击事件
+        document.getElementById('homepage-btn').addEventListener('click', function() {
+            window.open('https://github.com/jitwxs/163MusicLyrics', '_blank');
+        });
+
+        // Wiki按钮点击事件
+        document.getElementById('wiki-btn').addEventListener('click', function() {
+            window.open('https://github.com/jitwxs/163MusicLyrics/wiki', '_blank');
+        });
+
+        // 反馈问题按钮点击事件
+        document.getElementById('issues-btn').addEventListener('click', function() {
+            window.open('https://github.com/jitwxs/163MusicLyrics/issues', '_blank');
+        });
+
+        // 搜索历史按钮点击事件
+        document.getElementById('history-btn').addEventListener('click', function() {
+            alert('搜索历史功能开发中...');
+        });
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.ctrlKey) {
+                // 精确搜索
+                e.preventDefault();
+                document.getElementById('search-btn').click();
+            } else if (e.key === 'Enter' && e.ctrlKey) {
+                // 模糊搜索
+                e.preventDefault();
+                document.getElementById('blur-search-checkbox').checked = true;
+                document.getElementById('search-btn').click();
+            } else if (e.key === 's' && e.ctrlKey) {
+                // 保存结果
+                e.preventDefault();
+                document.querySelector('.btn-primary[style="width: 200px;"]').click();
+            }
+        });
+    </script>
+</body>
+</html>

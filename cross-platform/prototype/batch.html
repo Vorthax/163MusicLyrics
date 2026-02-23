@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MusicLyricApp - 批量操作</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #263238;
+        }
+        .app-header {
+            background-color: #1a237e;
+            color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .app-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+            background-color: white;
+            padding-left: 20px;
+        }
+        .nav-tabs .nav-item .nav-link {
+            color: #455a64;
+            border: none;
+            border-bottom: 3px solid transparent;
+            padding: 12px 20px;
+            font-weight: 500;
+        }
+        .nav-tabs .nav-item .nav-link.active {
+            color: #1a237e;
+            border-bottom-color: #1a237e;
+            background-color: #f8f9fa;
+        }
+        .main-content {
+            padding: 20px;
+            background-color: white;
+            min-height: 600px;
+        }
+        .batch-input {
+            margin-bottom: 30px;
+        }
+        .batch-input h4 {
+            color: #1a237e;
+            margin-bottom: 15px;
+        }
+        .input-area {
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 15px;
+            margin-bottom: 15px;
+            min-height: 150px;
+            background-color: #f8f9fa;
+        }
+        .input-area textarea {
+            width: 100%;
+            border: none;
+            background-color: transparent;
+            resize: none;
+            min-height: 120px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .batch-tasks {
+            margin-bottom: 30px;
+        }
+        .batch-tasks h4 {
+            color: #1a237e;
+            margin-bottom: 15px;
+        }
+        .task-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .task-table th,
+        .task-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .task-table th {
+            background-color: #f8f9fa;
+            font-weight: 500;
+            color: #455a64;
+        }
+        .task-table tr:hover {
+            background-color: #f8f9fa;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: #4caf50;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        .status-waiting {
+            color: #ffc107;
+        }
+        .status-processing {
+            color: #2196f3;
+        }
+        .status-completed {
+            color: #4caf50;
+        }
+        .status-failed {
+            color: #f44336;
+        }
+        .batch-controls {
+            margin-bottom: 20px;
+        }
+        .status-bar {
+            background-color: #e9ecef;
+            padding: 10px 20px;
+            border-top: 1px solid #dee2e6;
+            font-size: 12px;
+            color: #6c757d;
+        }
+        .btn-primary {
+            background-color: #1a237e;
+            border-color: #1a237e;
+        }
+        .btn-primary:hover {
+            background-color: #283593;
+            border-color: #283593;
+        }
+        .btn-secondary {
+            background-color: #455a64;
+            border-color: #455a64;
+        }
+        .btn-secondary:hover {
+            background-color: #37474f;
+            border-color: #37474f;
+        }
+        .btn-success {
+            background-color: #4caf50;
+            border-color: #4caf50;
+        }
+        .btn-success:hover {
+            background-color: #388e3c;
+            border-color: #388e3c;
+        }
+        .btn-danger {
+            background-color: #f44336;
+            border-color: #f44336;
+        }
+        .btn-danger:hover {
+            background-color: #d32f2f;
+            border-color: #d32f2f;
+        }
+        .btn-warning {
+            background-color: #ffc107;
+            border-color: #ffc107;
+        }
+        .btn-warning:hover {
+            background-color: #ffb300;
+            border-color: #ffb300;
+        }
+    </style>
+</head>
+<body>
+    <!-- 应用头部 -->
+    <div class="app-header">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <div class="app-title">MusicLyricApp v7.2</div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-light" id="batch-btn">批量操作</button>
+                <button class="btn btn-sm btn-outline-light" id="version-check-btn">检查更新</button>
+                <button class="btn btn-sm btn-outline-light" id="shortcuts-btn">快捷键</button>
+                <button class="btn btn-sm btn-outline-light" id="homepage-btn">主页</button>
+                <button class="btn btn-sm btn-outline-light" id="wiki-btn">Wiki</button>
+                <button class="btn btn-sm btn-outline-light" id="issues-btn">反馈问题</button>
+                <button class="btn btn-sm btn-outline-light" id="about-btn">关于</button>
+                <button class="btn btn-sm btn-outline-light" id="settings-btn">设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航选项卡 -->
+    <ul class="nav nav-tabs">
+        <li class="nav-item">
+            <a class="nav-link" href="index.html">主页</a>
+        </li>
+    </ul>
+
+    <!-- 主内容区 -->
+    <div class="container-fluid main-content">
+        <!-- 批量输入区域 -->
+        <div class="batch-input">
+            <h4>批量输入</h4>
+            <div class="input-area">
+                <textarea id="batch-input-text" placeholder="输入多个歌曲ID，使用逗号分隔...
+例如：1923927650,440208476,1334296072"></textarea>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary">上传文件</button>
+                <button class="btn btn-secondary">上传文件夹</button>
+                <button class="btn btn-danger">清空</button>
+            </div>
+        </div>
+
+        <!-- 批量任务列表 -->
+        <div class="batch-tasks">
+            <h4>批量任务列表</h4>
+            <table class="task-table">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="select-all">
+                        </th>
+                        <th>状态</th>
+                        <th>歌曲ID</th>
+                        <th>进度</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="task-list">
+                    <!-- 任务列表将通过JavaScript动态生成 -->
+                </tbody>
+            </table>
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-secondary">全选</button>
+                <button class="btn btn-sm btn-secondary">取消全选</button>
+                <button class="btn btn-sm btn-success">全部开始</button>
+                <button class="btn btn-sm btn-danger">全部删除</button>
+            </div>
+        </div>
+
+        <!-- 批量操作控制 -->
+        <div class="batch-controls">
+            <div class="d-flex gap-2">
+                <button class="btn btn-primary flex-grow-1">开始所有任务</button>
+                <button class="btn btn-warning flex-grow-1">暂停</button>
+                <button class="btn btn-danger flex-grow-1">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 状态栏 -->
+    <div class="status-bar">
+        <div class="container-fluid d-flex justify-content-between">
+            <div>就绪 | 任务数: 0 | 等待: 0 | 运行: 0 | 完成: 0 | 失败: 0</div>
+            <div>版本 7.2 | © 2026 MusicLyricApp</div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // 从URL获取搜索参数
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        // 页面加载时处理
+        window.onload = function() {
+            // 获取并填充歌曲ID
+            const ids = getQueryParam('ids');
+            if (ids) {
+                document.getElementById('batch-input-text').value = ids;
+                // 自动生成任务列表
+                generateTaskList(ids.split(','));
+            }
+        };
+
+        // 生成任务列表
+        function generateTaskList(songIds) {
+            const taskList = document.getElementById('task-list');
+            taskList.innerHTML = '';
+
+            songIds.forEach((songId, index) => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>
+                        <input type="checkbox" class="task-checkbox">
+                    </td>
+                    <td><span class="status-waiting">等待</span></td>
+                    <td>${songId}</td>
+                    <td>
+                        <div class="progress-bar">
+                            <div class="progress-bar-fill" style="width: 0%"></div>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-success">开始</button>
+                        <button class="btn btn-sm btn-danger">删除</button>
+                    </td>
+                `;
+                taskList.appendChild(row);
+            });
+
+            // 更新状态栏
+            const statusBar = document.querySelector('.status-bar .container-fluid div:first-child');
+            statusBar.textContent = `就绪 | 任务数: ${songIds.length} | 等待: ${songIds.length} | 运行: 0 | 完成: 0 | 失败: 0`;
+
+            // 重新绑定事件
+            bindTaskEvents();
+        }
+
+        // 绑定任务事件
+        function bindTaskEvents() {
+            // 模拟任务开始
+            document.querySelectorAll('.btn-success').forEach(button => {
+                button.addEventListener('click', function() {
+                    const row = this.closest('tr');
+                    const statusCell = row.querySelector('.status-waiting') || row.querySelector('.status-processing') || row.querySelector('.status-completed');
+                    const progressBar = row.querySelector('.progress-bar-fill');
+                    
+                    statusCell.textContent = '处理中';
+                    statusCell.className = 'status-processing';
+                    
+                    // 模拟进度
+                    let progress = 0;
+                    const interval = setInterval(() => {
+                        progress += 10;
+                        progressBar.style.width = progress + '%';
+                        
+                        if (progress >= 100) {
+                            clearInterval(interval);
+                            statusCell.textContent = '完成';
+                            statusCell.className = 'status-completed';
+                        }
+                    }, 200);
+                });
+            });
+
+            // 模拟删除任务
+            document.querySelectorAll('.btn-danger').forEach(button => {
+                button.addEventListener('click', function() {
+                    if (confirm('确定要删除此任务吗？')) {
+                        const row = this.closest('tr');
+                        row.remove();
+
+                        // 更新状态栏
+                        const taskCount = document.querySelectorAll('#task-list tr').length;
+                        const statusBar = document.querySelector('.status-bar .container-fluid div:first-child');
+                        statusBar.textContent = `就绪 | 任务数: ${taskCount} | 等待: ${taskCount} | 运行: 0 | 完成: 0 | 失败: 0`;
+                    }
+                });
+            });
+        }
+
+        // 全选/取消全选
+        document.getElementById('select-all').addEventListener('change', function() {
+            const checkboxes = document.querySelectorAll('.task-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+        });
+
+        // 批量操作按钮点击事件
+        const batchBtn = document.getElementById('batch-btn');
+        if (batchBtn) {
+            batchBtn.addEventListener('click', function() {
+                window.open('batch.html', '_blank', 'width=1000,height=700,top=100,left=100');
+            });
+        }
+
+        // 设置按钮点击事件
+        const settingsBtn = document.getElementById('settings-btn');
+        if (settingsBtn) {
+            settingsBtn.addEventListener('click', function() {
+                window.open('config.html', '_blank', 'width=900,height=700,top=100,left=100');
+            });
+        }
+
+        // 版本检查按钮点击事件
+        const versionCheckBtn = document.getElementById('version-check-btn');
+        if (versionCheckBtn) {
+            versionCheckBtn.addEventListener('click', function() {
+                alert('正在检查更新...\n\n当前版本: v7.2\n\n已是最新版本');
+            });
+        }
+
+        // 快捷键按钮点击事件
+        const shortcutsBtn = document.getElementById('shortcuts-btn');
+        if (shortcutsBtn) {
+            shortcutsBtn.addEventListener('click', function() {
+                const shortcuts = `快捷键说明:\n\n精确搜索: \t Enter\n模糊搜索: \t Ctrl + Enter\n保存结果: \t Ctrl + S`;
+                alert(shortcuts);
+            });
+        }
+
+        // 关于按钮点击事件
+        const aboutBtn = document.getElementById('about-btn');
+        if (aboutBtn) {
+            aboutBtn.addEventListener('click', function() {
+                const about = `MusicLyricApp v7.2\n\n一个功能强大的音乐歌词获取工具\n支持网易云音乐和QQ音乐\n\n© 2026 MusicLyricApp`;
+                alert(about);
+            });
+        }
+
+        // 主页按钮点击事件
+        const homepageBtn = document.getElementById('homepage-btn');
+        if (homepageBtn) {
+            homepageBtn.addEventListener('click', function() {
+                window.open('https://github.com/jitwxs/163MusicLyrics', '_blank');
+            });
+        }
+
+        // Wiki按钮点击事件
+        const wikiBtn = document.getElementById('wiki-btn');
+        if (wikiBtn) {
+            wikiBtn.addEventListener('click', function() {
+                window.open('https://github.com/jitwxs/163MusicLyrics/wiki', '_blank');
+            });
+        }
+
+        // 反馈问题按钮点击事件
+        const issuesBtn = document.getElementById('issues-btn');
+        if (issuesBtn) {
+            issuesBtn.addEventListener('click', function() {
+                window.open('https://github.com/jitwxs/163MusicLyrics/issues', '_blank');
+            });
+        }
+    </script>
+</body>
+</html>
