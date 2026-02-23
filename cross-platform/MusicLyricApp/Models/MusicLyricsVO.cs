@@ -370,6 +370,8 @@ public class SongVo : SimpleSongVo
     /// 歌曲时长 ms
     /// </summary>
     public long Duration { get; set; }
+
+    public string PublishDate { get; set; } = "";
 }
 
 /// <summary>

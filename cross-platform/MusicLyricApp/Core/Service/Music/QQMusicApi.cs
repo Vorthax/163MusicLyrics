@@ -76,7 +76,8 @@ public class QQMusicApi : MusicCacheableApi
                     Name = GlobalUtils.GetOrDefault(songRes.Data.Title, songRes.Data.Name),
                     Singer = songRes.Data.Singer.Select(e => e.Name).ToArray(),
                     Album = songRes.Data.Album.Name,
-                    Duration = songRes.Data.Interval * 1000
+                    Duration = songRes.Data.Interval * 1000,
+                    PublishDate = songRes.Data.Time_public
                 });
             }
             else

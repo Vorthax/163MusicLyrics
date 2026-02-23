@@ -211,6 +211,14 @@ public partial class SettingParamViewModel : ViewModelBase
     {
         _settingBean.Config.SingerSeparator = newValue;
     }
+
+    // 22. 歌词合并符
+    [ObservableProperty] private string _lrcMergeSeparator;
+
+    partial void OnLrcMergeSeparatorChanged(string value)
+    {
+        _settingBean.Param.LrcMergeSeparator = value;
+    }
     
     private SettingBean _settingBean;
 
@@ -239,5 +247,6 @@ public partial class SettingParamViewModel : ViewModelBase
         QqMusicCookie = _settingBean.Config.QQMusicCookie;
         NetEaseCookie = _settingBean.Config.NetEaseCookie;
         SingerSeparator = _settingBean.Config.SingerSeparator;
+        LrcMergeSeparator = _settingBean.Param.LrcMergeSeparator;
     }
 }

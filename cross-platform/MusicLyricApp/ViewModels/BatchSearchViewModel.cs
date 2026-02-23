@@ -1,13 +1,13 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using MusicLyricApp.Core;
 using MusicLyricApp.Core.Service;
-using MusicLyricApp.Core.Utils;
 using MusicLyricApp.Models;
 
 namespace MusicLyricApp.ViewModels;
@@ -19,20 +19,20 @@ public partial class BatchSearchViewModel : ViewModelBase
     private readonly SettingBean _settingBean;
     private readonly IWindowProvider _windowProvider;
 
-    public SearchResultViewModel SearchResultViewModel { get; } = new();
-    public SearchParamViewModel SearchParamViewModel { get; } = new();
+    private readonly Dictionary<string, SaveVo> _saveMap = new();
 
     public ObservableCollection<BatchSearchItemViewModel> Items { get; } = new();
 
     [ObservableProperty] private string _batchInputText = "";
-    [ObservableProperty] private string _lastSaveFolderPath = "";
-    [ObservableProperty] private string _summary = "";
-    [ObservableProperty] private string _statusMessage = "";
+    [ObservableProperty] private string _tipNormalMessage = "";
+    [ObservableProperty] private string _tipErrorMessage = "";
+
+    [ObservableProperty] private int _totalSongsCount;
+    [ObservableProperty] private int _songsWithLyricsCount;
+    [ObservableProperty] private int _saveSuccessCount;
+    [ObservableProperty] private int _saveFailedCount;
 
     public BatchSearchViewModel(
-        Dictionary<string, ResultVo<SaveVo>> resDict,
-        List<InputSongId> inputSongIds,
-        string inputText,
         SettingBean settingBean,
         SearchService searchService,
         StorageService storageService,
@@ -42,25 +42,18 @@ public partial class BatchSearchViewModel : ViewModelBase
         _settingBean = settingBean;
         _searchService = searchService;
         _windowProvider = windowProvider;
-        BatchInputText = inputText;
-        LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
-        SearchParamViewModel.Bind(_settingBean.Param);
 
-        LoadResults(resDict, inputSongIds);
     }
 
-    public void LoadResults(Dictionary<string, ResultVo<SaveVo>> resDict, List<InputSongId> inputSongIds, string? inputText = null)
+    public void AddSearchResults(Dictionary<string, ResultVo<SaveVo>> resDict, List<InputSongId> inputSongIds, string? inputText = null)
     {
         if (!string.IsNullOrWhiteSpace(inputText))
         {
             BatchInputText = inputText;
         }
 
-        Items.Clear();
-
-        var saveMap = new Dictionary<string, SaveVo>();
-        RenderUtils.RenderSearchResult(resDict, saveMap);
-        SearchResultViewModel.SaveVoMap = saveMap;
+        var existing = Items.ToDictionary(i => i.SongId, i => i);
+        var added = 0;
 
         foreach (var input in inputSongIds)
         {
@@ -69,55 +62,43 @@ public partial class BatchSearchViewModel : ViewModelBase
                 continue;
             }
 
+            if (!existing.TryGetValue(input.SongId, out var item))
+            {
+                item = new BatchSearchItemViewModel { SongId = input.SongId };
+                Items.Add(item);
+                existing[input.SongId] = item;
+                added++;
+            }
+
             if (result.IsSuccess())
             {
-                var saveVo = saveMap[input.SongId];
-                Items.Add(new BatchSearchItemViewModel
-                {
-                    SongId = input.SongId,
-                    SongName = saveVo.SongVo.Name,
-                    Singer = string.Join(_settingBean.Config.SingerSeparator, saveVo.SongVo.Singer),
-                    Album = saveVo.SongVo.Album,
-                    Status = "Success",
-                    Error = "",
-                    Progress = 100
-                });
+                var saveVo = result.Data;
+                _saveMap[input.SongId] = saveVo;
+
+                item.SongName = saveVo.SongVo.Name;
+                item.SongSource = GetSourceName(input.SearchSource);
+                item.Singer = string.Join(_settingBean.Config.SingerSeparator, saveVo.SongVo.Singer);
+                item.Album = saveVo.SongVo.Album;
+                item.Status = "Ready";
+                item.Error = saveVo.LyricVo.IsEmpty() ? ErrorMsgConst.LRC_NOT_EXIST : "";
+                item.Progress = 100;
             }
             else
             {
-                Items.Add(new BatchSearchItemViewModel
-                {
-                    SongId = input.SongId,
-                    SongName = "",
-                    Singer = "",
-                    Album = "",
-                    Status = "Failed",
-                    Error = result.ErrorMsg,
-                    Progress = 0
-                });
+                _saveMap.Remove(input.SongId);
+
+                item.SongName = "";
+                item.SongSource = GetSourceName(input.SearchSource);
+                item.Singer = "";
+                item.Album = "";
+                item.Status = "Failed";
+                item.Error = result.ErrorMsg;
+                item.Progress = 0;
             }
         }
 
-        var total = resDict.Count;
-        var success = resDict.Values.Count(v => v.IsSuccess());
-        var failed = total - success;
-        Summary = $"Total {total} | Success {success} | Failed {failed}";
-        StatusMessage = "";
-    }
-
-    [RelayCommand]
-    private async Task ExecuteSaveAllAsync()
-    {
-        try
-        {
-            var message = await _storageService.SaveResult(SearchResultViewModel, _settingBean, _windowProvider);
-            StatusMessage = message;
-            LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
-        }
-        catch (System.Exception ex)
-        {
-            await DialogHelper.ShowMessage(ex);
-        }
+        RefreshStats();
+        SetTip($"已同步 {added} 条搜索结果。", false);
     }
 
     [RelayCommand]
@@ -148,7 +129,7 @@ public partial class BatchSearchViewModel : ViewModelBase
         }
         catch (System.Exception ex)
         {
-            await DialogHelper.ShowMessage(ex);
+            SetTip(ex.Message, true);
         }
     }
 
@@ -176,35 +157,34 @@ public partial class BatchSearchViewModel : ViewModelBase
         var toRemove = Items.Where(item => item.IsSelected).ToList();
         if (toRemove.Count == 0)
         {
+            SetTip("未选择可删除项。", false);
             return;
         }
 
         foreach (var item in toRemove)
         {
+            _saveMap.Remove(item.SongId);
             Items.Remove(item);
-            SearchResultViewModel.SaveVoMap.Remove(item.SongId);
         }
 
-        var total = Items.Count;
-        var success = Items.Count(item => item.Status == "Success" || item.Status == "Saved");
-        var failed = total - success;
-        Summary = $"Total {total} | Success {success} | Failed {failed}";
+        RefreshStats();
+        SetTip($"已删除 {toRemove.Count} 条记录。", false);
     }
 
     [RelayCommand]
-    private async Task ExecuteStartSelectedAsync()
+    private async Task ExecuteSaveSelectedAsync()
     {
         var selected = Items.Where(item => item.IsSelected).ToList();
         if (selected.Count == 0)
         {
-            StatusMessage = "No items selected.";
+            SetTip("未选择可保存项。", false);
             return;
         }
 
         var saveMap = new Dictionary<string, SaveVo>();
         foreach (var item in selected)
         {
-            if (SearchResultViewModel.SaveVoMap.TryGetValue(item.SongId, out var saveVo))
+            if (_saveMap.TryGetValue(item.SongId, out var saveVo))
             {
                 saveMap[item.SongId] = saveVo;
             }
@@ -212,7 +192,7 @@ public partial class BatchSearchViewModel : ViewModelBase
 
         if (saveMap.Count == 0)
         {
-            StatusMessage = "Selected items have no successful results.";
+            SetTip("选中项没有可保存歌词。", true);
             return;
         }
 
@@ -220,21 +200,22 @@ public partial class BatchSearchViewModel : ViewModelBase
         {
             var temp = new SearchResultViewModel { SaveVoMap = saveMap };
             var message = await _storageService.SaveResult(temp, _settingBean, _windowProvider);
-            StatusMessage = message;
-            LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
-
-            foreach (var item in selected)
+            foreach (var item in selected.Where(i => saveMap.ContainsKey(i.SongId)))
             {
-                if (saveMap.ContainsKey(item.SongId))
-                {
-                    item.Status = "Saved";
-                    item.Progress = 100;
-                }
+                item.Status = "Saved";
+                item.Progress = 100;
             }
+
+            var stats = ParseSaveMessage(message);
+            SaveSuccessCount += stats.success;
+            SaveFailedCount += stats.failed;
+
+            RefreshStats();
+            SetTip(message, stats.failed > 0);
         }
         catch (System.Exception ex)
         {
-            await DialogHelper.ShowMessage(ex);
+            SetTip(ex.Message, true);
         }
     }
 
@@ -242,17 +223,50 @@ public partial class BatchSearchViewModel : ViewModelBase
     {
         try
         {
-            SearchParamViewModel.SearchText = inputText;
-            _searchService.InitSongIds(SearchParamViewModel, _settingBean);
+            var searchParam = new SearchParamViewModel();
+            searchParam.Bind(_settingBean.Param);
+            searchParam.SearchText = inputText;
 
-            var result = await Task.Run(() =>
-                _searchService.SearchSongs(SearchParamViewModel.SongIds, _settingBean));
-
-            LoadResults(result, SearchParamViewModel.SongIds);
+            _searchService.InitSongIds(searchParam, _settingBean);
+            var result = await Task.Run(() => _searchService.SearchSongs(searchParam.SongIds, _settingBean));
+            AddSearchResults(result, searchParam.SongIds, inputText);
         }
         catch (System.Exception ex)
         {
-            await DialogHelper.ShowMessage(ex);
+            SetTip(ex.Message, true);
         }
+    }
+
+    private void RefreshStats()
+    {
+        TotalSongsCount = Items.Count;
+        SongsWithLyricsCount = _saveMap.Count(pair => !pair.Value.LyricVo.IsEmpty());
+    }
+
+    private void SetTip(string message, bool isError)
+    {
+        TipNormalMessage = isError ? "" : message;
+        TipErrorMessage = isError ? message : "";
+    }
+
+    private static (int success, int failed) ParseSaveMessage(string message)
+    {
+        var matches = Regex.Matches(message, @"\d+");
+        if (matches.Count >= 2)
+        {
+            return (int.Parse(matches[0].Value), int.Parse(matches[1].Value));
+        }
+
+        return (0, 0);
+    }
+
+    private static string GetSourceName(SearchSourceEnum source)
+    {
+        return source switch
+        {
+            SearchSourceEnum.NET_EASE_MUSIC => "网易云",
+            SearchSourceEnum.QQ_MUSIC => "QQ音乐",
+            _ => source.ToString()
+        };
     }
 }

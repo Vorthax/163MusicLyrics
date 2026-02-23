@@ -98,7 +98,10 @@ public class NetEaseMusicApi(Func<string> cookieFunc) : MusicCacheableApi
                     Name = song.Name,
                     Singer = song.Ar.Select(e => e.Name).ToArray(),
                     Album = song.Al.Name,
-                    Duration = song.Dt
+                    Duration = song.Dt,
+                    PublishDate = song.PublishTime > 0
+                        ? GlobalUtils.FormatDate(song.PublishTime).Split(' ')[0]
+                        : string.Empty
                 });
             }
             else

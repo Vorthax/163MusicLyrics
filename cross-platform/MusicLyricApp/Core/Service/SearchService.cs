@@ -162,6 +162,15 @@ public class SearchService(SettingBean settingBean) : ISearchService
             searchResult.Singer = string.Join(settingBean.Config.SingerSeparator, saveVo.SongVo.Singer);
             searchResult.Album = saveVo.SongVo.Album;
             searchResult.SongName = saveVo.SongVo.Name;
+            var duration = TimeSpan.FromMilliseconds(saveVo.SongVo.Duration);
+            searchResult.SongDuration = $"{(int)duration.TotalMinutes:00}:{duration.Seconds:00}";
+            searchResult.PublishDate = saveVo.SongVo.PublishDate;
+            searchResult.SongSource = saveVo.LyricVo.SearchSource switch
+            {
+                SearchSourceEnum.NET_EASE_MUSIC => "网易云",
+                SearchSourceEnum.QQ_MUSIC => "QQ音乐",
+                _ => saveVo.LyricVo.SearchSource.ToString()
+            };
         }
         else
         {

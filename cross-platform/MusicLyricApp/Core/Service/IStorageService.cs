@@ -17,4 +17,8 @@ public interface IStorageService
     string SaveSongLink(SearchResultViewModel searchResult, SettingBean settingBean, IWindowProvider windowProvider);
 
     string SaveSongPic(SearchResultViewModel searchResult, SettingBean settingBean, IWindowProvider windowProvider);
+
+    Task<string> DownloadSongLink(SearchResultViewModel searchResult, SettingBean settingBean, IWindowProvider windowProvider);
+
+    Task<string> DownloadSongPic(SearchResultViewModel searchResult, SettingBean settingBean, IWindowProvider windowProvider);
 }

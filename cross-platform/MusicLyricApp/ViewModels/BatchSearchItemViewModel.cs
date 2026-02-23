@@ -5,6 +5,7 @@ namespace MusicLyricApp.ViewModels;
 public partial class BatchSearchItemViewModel : ObservableObject
 {
     [ObservableProperty] private bool _isSelected;
+    [ObservableProperty] private string _songSource = "";
     [ObservableProperty] private string _songId = "";
     [ObservableProperty] private string _songName = "";
     [ObservableProperty] private string _singer = "";

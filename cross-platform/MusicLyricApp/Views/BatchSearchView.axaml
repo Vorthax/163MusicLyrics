@@ -1,4 +1,4 @@
-<UserControl xmlns="https://github.com/avaloniaui"
+﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -8,31 +8,27 @@
              x:DataType="viewModels:BatchSearchViewModel"
              d:DesignWidth="900" d:DesignHeight="640">
 
-    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="12" RowSpacing="10">
-        <StackPanel Orientation="Horizontal" Spacing="12">
-            <TextBlock Text="Batch Results" FontWeight="Bold" />
-            <TextBlock Text="{Binding Summary}" VerticalAlignment="Center" />
-            <TextBlock Text="{Binding StatusMessage}" VerticalAlignment="Center" />
-        </StackPanel>
+    <UserControl.Styles>
+        <Style Selector="Button">
+            <Setter Property="HorizontalContentAlignment" Value="Center" />
+            <Setter Property="VerticalContentAlignment" Value="Center" />
+        </Style>
+    </UserControl.Styles>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*,Auto" ColumnSpacing="8">
-            <StackPanel Spacing="6">
-                <TextBox Text="{Binding BatchInputText}"
-                         Height="60"
-                         AcceptsReturn="True"
-                         TextWrapping="Wrap"
-                         IsReadOnly="True" />
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBox Text="{Binding LastSaveFolderPath}" IsReadOnly="True" Width="520" />
-                </StackPanel>
-            </StackPanel>
+    <Grid RowDefinitions="Auto,*,Auto,Auto" Margin="12" RowSpacing="10">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" ColumnSpacing="8">
+            <TextBox Text="{Binding BatchInputText}"
+                     Height="60"
+                     AcceptsReturn="True"
+                     TextWrapping="Wrap"
+                     IsReadOnly="True" />
             <Button Grid.Column="1"
-                    Content="Select Folder"
+                    Content="本地扫描"
                     Width="130"
                     Command="{Binding ExecuteSelectFolderCommand}" />
         </Grid>
 
-        <DataGrid Grid.Row="2"
+        <DataGrid Grid.Row="1"
                   ItemsSource="{Binding Items}"
                   AutoGenerateColumns="False"
                   CanUserReorderColumns="False"
@@ -47,11 +43,12 @@
                         </DataTemplate>
                     </DataGridTemplateColumn.CellTemplate>
                 </DataGridTemplateColumn>
-                <DataGridTextColumn Header="Song ID" Binding="{Binding SongId}" Width="120" />
-                <DataGridTextColumn Header="Song Name" Binding="{Binding SongName}" Width="*" />
-                <DataGridTextColumn Header="Singer" Binding="{Binding Singer}" Width="180" />
-                <DataGridTextColumn Header="Album" Binding="{Binding Album}" Width="200" />
-                <DataGridTemplateColumn Header="Status" Width="220" CanUserSort="False">
+                <DataGridTextColumn Header="歌曲源" Binding="{Binding SongSource}" Width="90" />
+                <DataGridTextColumn Header="歌曲ID" Binding="{Binding SongId}" Width="120" />
+                <DataGridTextColumn Header="歌曲名" Binding="{Binding SongName}" Width="*" />
+                <DataGridTextColumn Header="歌手" Binding="{Binding Singer}" Width="180" />
+                <DataGridTextColumn Header="专辑" Binding="{Binding Album}" Width="200" />
+                <DataGridTemplateColumn Header="状态" Width="220" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Spacing="4">
@@ -65,11 +62,27 @@
             </DataGrid.Columns>
         </DataGrid>
 
-        <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
-            <Button Content="Select All" Width="110" Command="{Binding ExecuteSelectAllCommand}" />
-            <Button Content="Clear Selection" Width="130" Command="{Binding ExecuteClearSelectedCommand}" />
-            <Button Content="Save Selected" Width="130" Command="{Binding ExecuteStartSelectedCommand}" />
-            <Button Content="Delete Selected" Width="130" Command="{Binding ExecuteDeleteSelectedCommand}" />
+        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+            <Button Content="全选" Width="110" Command="{Binding ExecuteSelectAllCommand}" />
+            <Button Content="取消全选" Width="130" Command="{Binding ExecuteClearSelectedCommand}" />
+            <Button Content="保存选中" Width="130" Command="{Binding ExecuteSaveSelectedCommand}" />
+            <Button Content="删除选中" Width="130" Command="{Binding ExecuteDeleteSelectedCommand}" />
         </StackPanel>
+
+        <Border Grid.Row="3" Padding="8" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6" Background="#FAFBFC">
+            <TextBlock TextTrimming="CharacterEllipsis">
+                <Run Text="【提示】 " Foreground="#344054" />
+                <Run Text="{Binding TipNormalMessage}" Foreground="#667085" />
+                <Run Text="{Binding TipErrorMessage}" Foreground="IndianRed" />
+                <Run Text=" | 累计保存歌曲数量: " Foreground="#344054" />
+                <Run Text="{Binding TotalSongsCount}" Foreground="#344054" />
+                <Run Text=" | 存在歌词数量: " Foreground="#344054" />
+                <Run Text="{Binding SongsWithLyricsCount}" Foreground="#344054" />
+                <Run Text=" | 保存成功: " Foreground="#344054" />
+                <Run Text="{Binding SaveSuccessCount}" Foreground="#2E7D32" />
+                <Run Text=" | 保存失败: " Foreground="#344054" />
+                <Run Text="{Binding SaveFailedCount}" Foreground="IndianRed" />
+            </TextBlock>
+        </Border>
     </Grid>
 </UserControl>
