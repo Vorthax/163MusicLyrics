@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using MusicLyricApp.Core.Service;
 
 namespace MusicLyricApp.Core.Utils;
 
@@ -22,7 +23,7 @@ public static class HttpUtils
         int timeOut = 30, Dictionary<string, string> headers = null)
     {
         postData = postData ?? string.Empty;
-        using (HttpClient client = new HttpClient())
+        using (HttpClient client = NetworkClientFactory.CreateHttpClient(timeOut))
         {
             if (headers != null)
             {
@@ -55,9 +56,8 @@ public static class HttpUtils
         string contentType = "application/json", int timeOut = 30, Dictionary<string, string> headers = null)
     {
         postData = postData ?? string.Empty;
-        using (HttpClient client = new HttpClient())
+        using (HttpClient client = NetworkClientFactory.CreateHttpClient(timeOut))
         {
-            client.Timeout = new TimeSpan(0, 0, timeOut);
             if (headers != null)
             {
                 foreach (var header in headers)
@@ -93,7 +93,7 @@ public static class HttpUtils
     public static HttpResponseMessage HttpGet0(string url, string contentType = "application/json",
         Dictionary<string, string> headers = null)
     {
-        using (HttpClient client = new HttpClient())
+        using (HttpClient client = NetworkClientFactory.CreateHttpClient())
         {
             if (contentType != null)
                 client.DefaultRequestHeaders.Add("ContentType", contentType);
@@ -117,7 +117,7 @@ public static class HttpUtils
     public static async Task<string> HttpGetAsync(string url, string contentType = "application/json",
         Dictionary<string, string> headers = null)
     {
-        using (HttpClient client = new HttpClient())
+        using (HttpClient client = NetworkClientFactory.CreateHttpClient())
         {
             if (contentType != null)
                 client.DefaultRequestHeaders.Add("ContentType", contentType);
@@ -194,7 +194,7 @@ public static class HttpUtils
     {
         try
         {
-            var client = new HttpClient();
+            using var client = NetworkClientFactory.CreateHttpClient();
 
             using (var s = await client.GetStreamAsync(url))
             using (var fs = new FileStream(path, FileMode.OpenOrCreate))

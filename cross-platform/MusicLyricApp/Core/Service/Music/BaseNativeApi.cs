@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Net;
 using System.Text;
+using MusicLyricApp.Core.Service;
 using MusicLyricApp.Core.Utils;
 
 namespace MusicLyricApp.Core.Service.Music;
@@ -29,6 +30,7 @@ public abstract class BaseNativeApi(Func<string> cookieFunc)
         string result;
         using (var wc = new WebClient())
         {
+            NetworkClientFactory.ConfigureWebClient(wc);
             var cookie = cookieFunc.Invoke();
             if (string.IsNullOrWhiteSpace(cookie))
             {
@@ -57,6 +59,7 @@ public abstract class BaseNativeApi(Func<string> cookieFunc)
     {
         using (var wc = new WebClient())
         {
+            NetworkClientFactory.ConfigureWebClient(wc);
             var cookie = cookieFunc.Invoke();
             if (string.IsNullOrWhiteSpace(cookie))
             {

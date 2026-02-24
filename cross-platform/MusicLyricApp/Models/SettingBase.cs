@@ -4,6 +4,12 @@ using System.Linq;
 
 namespace MusicLyricApp.Models;
 
+public enum NetworkProxyModeEnum
+{
+    SYSTEM_PROXY = 0,
+    DIRECT_CONNECT = 1
+}
+
 public class SettingBean
 {
     public readonly ConfigBean Config = new();
@@ -99,6 +105,11 @@ public class ConfigBean
     /// 本地搜索缓存最大大小（MB）
     /// </summary>
     public int SearchCacheMaxSizeMb = 128;
+
+    /// <summary>
+    /// 代理模式
+    /// </summary>
+    public NetworkProxyModeEnum NetworkProxyMode = NetworkProxyModeEnum.SYSTEM_PROXY;
 
     /// <summary>
     /// 输出的歌词类型列表

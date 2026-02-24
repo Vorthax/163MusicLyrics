@@ -49,6 +49,7 @@ public partial class MainWindow : Window, IWindowProvider
                 {
                     // 从网络加载封面图片
                     var client = new WebClient();
+                    NetworkClientFactory.ConfigureWebClient(client);
                     var imageData = await client.DownloadDataTaskAsync(saveVo.SongVo.Pics);
                     var stream = new MemoryStream(imageData);
                     var bitmap = new Bitmap(stream);

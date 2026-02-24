@@ -35,7 +35,7 @@ public partial class MainWindowViewModel : ViewModelBase
     
     public SignalLampViewModel LampVm { get; } = new();
 
-    [ObservableProperty] private string _appTitle = "MusicLyricApp v7.2";
+    [ObservableProperty] private string _appTitle = "MusicLyricApp v7.3";
 
     [ObservableProperty] private string _lastSaveFolderPath = "";
     [ObservableProperty] private string _tipTimestamp = "";
@@ -75,6 +75,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         _settingBean = new StorageService().ReadAppConfig();
+        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
         _searchService = new SearchService(_settingBean);
         _windowProvider = null;
         _downloadManagerViewModel = new BatchSearchViewModel(_settingBean, _searchService, new StorageService(), null!);
@@ -99,6 +100,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _windowProvider = windowProvider;
 
         _settingBean = _storageService.ReadAppConfig();
+        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
 
         _searchService = new SearchService(_settingBean);
         
@@ -773,7 +775,7 @@ public partial class MainWindowViewModel : ViewModelBase
             }
             else if (_showMessageIfNotExistLatestVersion)
             {
-                throw new MusicLyricException(ErrorMsgConst.THIS_IS_LATEST_VERSION);
+                SetTip(ErrorMsgConst.THIS_IS_LATEST_VERSION, false);
             }
         }
         catch (Exception ex)

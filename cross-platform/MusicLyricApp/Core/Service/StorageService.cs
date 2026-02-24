@@ -15,7 +15,6 @@ namespace MusicLyricApp.Core.Service;
 
 public class StorageService : IStorageService
 {
-    private static readonly HttpClient HttpClient = new();
     private ISearchService _searchService;
 
     private readonly Logger _logger = LogManager.GetCurrentClassLogger();
@@ -40,6 +39,11 @@ public class StorageService : IStorageService
 
         LocalSongCacheService.EnsureConfigDefaults(setting);
         return setting;
+    }
+
+    private static HttpClient CreateHttpClient(int timeoutSeconds = 120)
+    {
+        return NetworkClientFactory.CreateHttpClient(timeoutSeconds);
     }
 
     public void SaveConfig(SettingBean settingBean)
@@ -160,7 +164,8 @@ public class StorageService : IStorageService
         }
 
         var folder = await ResolveSaveFolderAsync(settingBean, windowProvider);
-        using var resp = await HttpClient.GetAsync(link);
+        using var client = CreateHttpClient();
+        using var resp = await client.GetAsync(link);
         resp.EnsureSuccessStatusCode();
 
         var ext = ResolveAudioExt(link, resp.Content.Headers.ContentType?.MediaType);
@@ -191,7 +196,8 @@ public class StorageService : IStorageService
         var ext = GetImageExt(saveVo.SongVo.Pics);
         var file = await folder.CreateFileAsync($"{GetSafeFileStem(saveVo.SongVo.Name)}-cover.{ext}");
 
-        var bytes = await HttpClient.GetByteArrayAsync(saveVo.SongVo.Pics);
+        using var client = CreateHttpClient();
+        var bytes = await client.GetByteArrayAsync(saveVo.SongVo.Pics);
         await using var stream = await file.OpenWriteAsync();
         await stream.WriteAsync(bytes);
         await stream.FlushAsync();
@@ -269,7 +275,8 @@ public class StorageService : IStorageService
             {
                 var ext = GetImageExt(saveVo.SongVo.Pics);
                 var file = await folder.CreateFileAsync($"{baseName}-cover.{ext}");
-                var bytes = await HttpClient.GetByteArrayAsync(saveVo.SongVo.Pics);
+                using var client = CreateHttpClient();
+                var bytes = await client.GetByteArrayAsync(saveVo.SongVo.Pics);
                 await using var stream = await file.OpenWriteAsync();
                 await stream.WriteAsync(bytes);
                 await stream.FlushAsync();
@@ -289,7 +296,8 @@ public class StorageService : IStorageService
                 return;
             }
 
-            using var resp = await HttpClient.GetAsync(linkResult.Data);
+            using var client = CreateHttpClient();
+            using var resp = await client.GetAsync(linkResult.Data);
             resp.EnsureSuccessStatusCode();
             var ext = ResolveAudioExt(linkResult.Data, resp.Content.Headers.ContentType?.MediaType);
             var file = await folder.CreateFileAsync($"{baseName}.{ext}");

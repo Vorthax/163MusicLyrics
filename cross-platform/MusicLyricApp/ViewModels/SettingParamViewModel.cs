@@ -1,6 +1,7 @@
 ﻿using System.Collections.ObjectModel;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
+using MusicLyricApp.Core.Service;
 using MusicLyricApp.Core.Utils;
 using MusicLyricApp.Models;
 
@@ -8,6 +9,27 @@ namespace MusicLyricApp.ViewModels;
 
 public partial class SettingParamViewModel : ViewModelBase
 {
+    // 0. 网络代理模式
+    public ObservableCollection<EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum>> NetworkProxyModes { get; } =
+    [
+        new() { Description = "系统代理", Value = NetworkProxyModeEnum.SYSTEM_PROXY },
+        new() { Description = "直接连接", Value = NetworkProxyModeEnum.DIRECT_CONNECT }
+    ];
+
+    [ObservableProperty]
+    private EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum> _selectedNetworkProxyModeItem;
+
+    partial void OnSelectedNetworkProxyModeItemChanged(EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum>? value)
+    {
+        if (value == null)
+        {
+            return;
+        }
+
+        _settingBean.Config.NetworkProxyMode = value.Value;
+        NetworkClientFactory.Configure(value.Value);
+    }
+
     // 1. 毫秒截位规则
     public ObservableCollection<EnumDisplayHelper.EnumDisplayItem<DotTypeEnum>> DotTypes { get; } =
         EnumDisplayHelper.GetEnumDisplayCollection<DotTypeEnum>();
@@ -273,7 +295,9 @@ public partial class SettingParamViewModel : ViewModelBase
     public void Bind(SettingBean settingBean)
     {
         _settingBean = settingBean;
+        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
         
+        SelectedNetworkProxyModeItem = NetworkProxyModes.First(item => Equals(item.Value, _settingBean.Config.NetworkProxyMode));
         SelectedDotTypeItem = DotTypes.First(item => Equals(item.Value, _settingBean.Config.DotType));
         SelectedTransLyricLostRuleItem = TransLyricLostRules.First(item => Equals(item.Value, _settingBean.Config.TransConfig.LostRule));
         SelectedChineseProcessRuleItem = ChineseProcessRules.First(item => Equals(item.Value, _settingBean.Config.ChineseProcessRule));
@@ -303,3 +327,4 @@ public partial class SettingParamViewModel : ViewModelBase
         SearchCacheSizeError = string.Empty;
     }
 }
+

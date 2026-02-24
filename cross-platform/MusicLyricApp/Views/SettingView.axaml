@@ -146,6 +146,25 @@
                 </ScrollViewer>
             </TabItem>
 
+            <TabItem Header="网络设置">
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Spacing="10" Margin="10">
+                        <Border Padding="12" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="8" Background="#FFFFFF">
+                            <StackPanel Spacing="8">
+                                <TextBlock Text="代理模式" FontWeight="SemiBold" />
+                                <TextBlock Text="系统代理：跟随系统/全局 VPN；直接连接：禁用系统代理，直连目标服务。" Foreground="#667085" TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="140,*" ColumnSpacing="10">
+                                    <TextBlock Grid.Column="0" Text="连接方式" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Column="1"
+                                              ItemsSource="{Binding SettingParamViewModel.NetworkProxyModes}"
+                                              SelectedItem="{Binding SettingParamViewModel.SelectedNetworkProxyModeItem}" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
+
             <TabItem Header="下载与缓存">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Spacing="10" Margin="10">
@@ -250,6 +269,19 @@
                                               ItemsSource="{Binding SettingParamViewModel.ThemeModeRules}"
                                               SelectedItem="{Binding SettingParamViewModel.SelectedThemeModeRuleItem}" />
                                 </Grid>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="12" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="8" Background="#FFFFFF">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="快捷键" FontWeight="SemiBold" />
+                                <TextBlock Foreground="#667085">
+                                    <Run Text="Enter：精确搜索" />
+                                    <LineBreak />
+                                    <Run Text="Ctrl + Enter：模糊搜索" />
+                                    <LineBreak />
+                                    <Run Text="Ctrl + S：保存结果" />
+                                </TextBlock>
                             </StackPanel>
                         </Border>
 

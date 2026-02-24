@@ -6,7 +6,7 @@
         Icon="/Resources/app-logo.ico"
         Title="{Binding AppTitle}"
         Width="700"
-        Height="690"
+        Height="710"
         MinWidth="700"
         MinHeight="650">
 
@@ -33,7 +33,6 @@
             <MenuItem Header="使用手册" Command="{Binding ExecuteWikiCommand}" />
             <MenuItem Header="问题反馈" Command="{Binding ExecuteIssueCommand}" />
             <MenuItem Header="检查更新" Command="{Binding ExecuteVersionCheckCommand}" />
-            <MenuItem Header="快捷键" Command="{Binding ExecuteShortCutCommand}" />
             <MenuItem Header="更多设置" Command="{Binding ExecuteSettingCommand}" />
         </Menu>
 
