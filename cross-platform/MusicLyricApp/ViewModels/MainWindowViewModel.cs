@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -8,12 +9,14 @@ using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Threading;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using MsBox.Avalonia;
 using MsBox.Avalonia.Enums;
+using NAudio.Wave;
 using MusicLyricApp.Core;
 using MusicLyricApp.Core.Service;
 using MusicLyricApp.Core.Service.Music;
@@ -35,11 +38,24 @@ public partial class MainWindowViewModel : ViewModelBase
     [ObservableProperty] private string _appTitle = "MusicLyricApp v7.2";
 
     [ObservableProperty] private string _lastSaveFolderPath = "";
+    [ObservableProperty] private string _tipTimestamp = "";
     [ObservableProperty] private string _tipNormalMessage = "";
     [ObservableProperty] private string _tipErrorMessage = "";
     [ObservableProperty] private bool _isBlurSearch;
+    [ObservableProperty] private bool _hasSongLink;
+    [ObservableProperty] private bool _isPlayingSong;
+    [ObservableProperty] private double _playbackPositionSeconds;
+    [ObservableProperty] private double _playbackDurationSeconds;
+
+    public string PlaybackProgressText => $"{FormatPlaybackTime(PlaybackPositionSeconds)} / {FormatPlaybackTime(PlaybackDurationSeconds)}";
 
     private readonly SearchService _searchService;
+
+    private readonly DispatcherTimer _playbackTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
+    private IWavePlayer? _waveOut;
+    private MediaFoundationReader? _audioReader;
+    private string _currentPlayingLink = string.Empty;
+    private bool _updatingPlaybackPosition;
 
     private readonly StorageService _storageService = new();
         
@@ -65,6 +81,16 @@ public partial class MainWindowViewModel : ViewModelBase
         
         SearchParamViewModel.Bind(_settingBean.Param);
         LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
+
+        SearchResultViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SearchResultViewModel.SongLink))
+            {
+                RefreshSongLinkState();
+            }
+        };
+
+        _playbackTimer.Tick += (_, _) => UpdatePlaybackProgress();
     }
 
     // Main constructor for runtime use
@@ -81,6 +107,16 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SearchParamViewModel.Bind(_settingBean.Param);
         LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
+
+        SearchResultViewModel.PropertyChanged += (_, e) =>
+        {
+            if (e.PropertyName == nameof(SearchResultViewModel.SongLink))
+            {
+                RefreshSongLinkState();
+            }
+        };
+
+        _playbackTimer.Tick += (_, _) => UpdatePlaybackProgress();
         
         WeakReferenceMessenger.Default.Register<BlurSearchResultsMessage>(this, (r, m) =>
         {
@@ -95,6 +131,11 @@ public partial class MainWindowViewModel : ViewModelBase
                 _blurSearchWindow = null;
             }
         });
+
+        WeakReferenceMessenger.Default.Register<OpenSongDetailMessage>(this, (r, m) =>
+        {
+            _ = OpenSongDetailAsync(m.Value);
+        });
         
         UpdateTheme();
         
@@ -106,8 +147,92 @@ public partial class MainWindowViewModel : ViewModelBase
     
     private async Task ProcessBlurSearchResults(string ids)
     {
+        var selectedSongIds = new List<string>();
+        try
+        {
+            var parseParam = new SearchParamViewModel();
+            parseParam.Bind(SettingBean.Param);
+            parseParam.SearchText = ids;
+            _searchService.InitSongIds(parseParam, SettingBean);
+            selectedSongIds = parseParam.SongIds.Select(x => x.SongId).Distinct().ToList();
+        }
+        catch
+        {
+            // Ignore parse failure here and keep original behavior.
+        }
+
         IsBlurSearch = false;
         SearchParamViewModel.SearchText = ids;
+        await ExecuteSearchAsync();
+
+        if (selectedSongIds.Count > 1)
+        {
+            _downloadManagerViewModel.SelectSongsByIds(selectedSongIds);
+            ExecuteOpenDownloadManager();
+        }
+    }
+
+    private async Task OpenSongDetailAsync(SongDetailRequest request)
+    {
+        IsBlurSearch = false;
+        var sourceItem = SearchParamViewModel.SearchSources.FirstOrDefault(x => x.Value == request.SearchSource);
+        if (sourceItem != null)
+        {
+            SearchParamViewModel.SelectedSearchSourceItem = sourceItem;
+        }
+
+        SearchParamViewModel.SearchText = request.SongId;
+
+        ResetPlaybackAndSongLink();
+
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
+        {
+            var mainWindow = desktop.MainWindow;
+            if (mainWindow != null)
+            {
+                if (mainWindow.WindowState == WindowState.Minimized)
+                {
+                    mainWindow.WindowState = WindowState.Normal;
+                }
+
+                mainWindow.Activate();
+            }
+        }
+
+        if (_downloadManagerViewModel.TryGetCachedSaveVo(request.SongId, out var saveVo))
+        {
+            var tempParam = new SearchParamViewModel();
+            tempParam.Bind(SettingBean.Param);
+            tempParam.SongIds.Clear();
+            var rawInput = new InputSongId(request.SongId, request.SearchSource, SearchTypeEnum.SONG_ID);
+            tempParam.SongIds.Add(new InputSongId(request.SongId, rawInput));
+
+            var cachedResult = new Dictionary<string, ResultVo<SaveVo>>
+            {
+                [request.SongId] = new(saveVo)
+            };
+
+            await _searchService.RenderSearchResult(tempParam, SearchResultViewModel, SettingBean, cachedResult);
+
+            if (_downloadManagerViewModel.TryGetCachedSongLink(request.SongId, out var cachedLink))
+            {
+                SearchResultViewModel.SongLink = cachedLink;
+            }
+            else
+            {
+                var musicApi = _searchService.GetMusicApi(request.SearchSource);
+                var linkResult = await Task.Run(() => musicApi.GetSongLink(request.SongId));
+                if (linkResult.IsSuccess())
+                {
+                    SearchResultViewModel.SongLink = linkResult.Data;
+                    _downloadManagerViewModel.CacheSongLink(request.SongId, linkResult.Data);
+                }
+            }
+
+            SetTip("已从下载管理缓存加载歌曲详情。", false);
+            return;
+        }
+
         await ExecuteSearchAsync();
     }
 
@@ -141,6 +266,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
             if (SearchParamViewModel.SongIds.Count == 1)
             {
+                ResetPlaybackAndSongLink();
                 await _searchService.RenderSearchResult(SearchParamViewModel, SearchResultViewModel, SettingBean, result);
                 if (SearchResultViewModel.ConsoleOutput == ErrorMsgConst.LRC_NOT_EXIST)
                 {
@@ -156,6 +282,7 @@ public partial class MainWindowViewModel : ViewModelBase
                     if (linkResult.IsSuccess())
                     {
                         SearchResultViewModel.SongLink = linkResult.Data;
+                        _downloadManagerViewModel.CacheSongLink(SearchParamViewModel.SongIds[0].SongId, linkResult.Data);
                     }
                 });
             }
@@ -271,6 +398,213 @@ public partial class MainWindowViewModel : ViewModelBase
         catch (Exception ex)
         {
             SetTip(ex.Message, true);
+        }
+    }
+
+    private void RefreshSongLinkState()
+    {
+        HasSongLink = !string.IsNullOrWhiteSpace(SearchResultViewModel.SongLink);
+        if (!HasSongLink)
+        {
+            StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+            return;
+        }
+
+        EnsurePlaybackPrepared();
+        UpdatePlaybackProgress();
+    }
+
+    private void UpdatePlaybackProgress()
+    {
+        if (_audioReader == null || _updatingPlaybackPosition)
+        {
+            return;
+        }
+
+        _updatingPlaybackPosition = true;
+        PlaybackDurationSeconds = Math.Max(0, _audioReader.TotalTime.TotalSeconds);
+        PlaybackPositionSeconds = Math.Clamp(_audioReader.CurrentTime.TotalSeconds, 0, PlaybackDurationSeconds);
+        _updatingPlaybackPosition = false;
+    }
+
+    partial void OnPlaybackPositionSecondsChanged(double value)
+    {
+        OnPropertyChanged(nameof(PlaybackProgressText));
+
+        if (_updatingPlaybackPosition)
+        {
+            return;
+        }
+
+        if (_audioReader == null && !EnsurePlaybackPrepared())
+        {
+            return;
+        }
+
+        var safeValue = Math.Clamp(value, 0, Math.Max(0, _audioReader.TotalTime.TotalSeconds));
+        _audioReader.CurrentTime = TimeSpan.FromSeconds(safeValue);
+    }
+
+    partial void OnPlaybackDurationSecondsChanged(double value)
+    {
+        OnPropertyChanged(nameof(PlaybackProgressText));
+    }
+
+    private static string FormatPlaybackTime(double seconds)
+    {
+        if (seconds <= 0)
+        {
+            return "00:00";
+        }
+
+        var ts = TimeSpan.FromSeconds(seconds);
+        var totalMinutes = (int)ts.TotalMinutes;
+        return $"{totalMinutes:00}:{ts.Seconds:00}";
+    }
+
+    [RelayCommand]
+    private void ExecutePlaySong()
+    {
+        if (!HasSongLink)
+        {
+            SetTip("\u5f53\u524d\u6b4c\u66f2\u6ca1\u6709\u53ef\u64ad\u653e\u7684\u76f4\u94fe\u3002", true);
+            return;
+        }
+
+        try
+        {
+            if (!EnsurePlaybackPrepared())
+            {
+                return;
+            }
+
+            _waveOut?.Play();
+            IsPlayingSong = true;
+            _playbackTimer.Start();
+            SetTip("\u5f00\u59cb\u64ad\u653e\u6b4c\u66f2\u3002", false);
+        }
+        catch (Exception ex)
+        {
+            StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+            SetTip($"\u64ad\u653e\u5931\u8d25\uff1a{ex.Message}", true);
+        }
+    }
+
+    [RelayCommand]
+    private void ExecuteStopSong()
+    {
+        if (_audioReader == null && _waveOut == null)
+        {
+            return;
+        }
+
+        StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+        SetTip("\u5df2\u505c\u6b62\u64ad\u653e\u3002", false);
+    }
+
+    private void StopPlaybackInternal(bool resetPosition, bool disposePlayer)
+    {
+        _playbackTimer.Stop();
+
+        if (_waveOut != null)
+        {
+            _waveOut.Stop();
+            if (disposePlayer)
+            {
+                _waveOut.Dispose();
+                _waveOut = null;
+            }
+        }
+
+        if (disposePlayer && _audioReader != null)
+        {
+            _audioReader.Dispose();
+            _audioReader = null;
+            _currentPlayingLink = string.Empty;
+        }
+
+        IsPlayingSong = false;
+
+        if (resetPosition)
+        {
+            _updatingPlaybackPosition = true;
+            PlaybackPositionSeconds = 0;
+            PlaybackDurationSeconds = 0;
+            _updatingPlaybackPosition = false;
+        }
+    }
+
+    [RelayCommand]
+    private void ExecuteTogglePlayPause()
+    {
+        if (!HasSongLink)
+        {
+            return;
+        }
+
+        if (_audioReader == null || _waveOut == null)
+        {
+            ExecutePlaySong();
+            return;
+        }
+
+        if (IsPlayingSong)
+        {
+            _waveOut.Pause();
+            _playbackTimer.Stop();
+            IsPlayingSong = false;
+            SetTip("已暂停播放。", false);
+        }
+        else
+        {
+            _waveOut.Play();
+            _playbackTimer.Start();
+            IsPlayingSong = true;
+            SetTip("继续播放。", false);
+        }
+    }
+
+    private void ResetPlaybackAndSongLink()
+    {
+        StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+        SearchResultViewModel.SongLink = "";
+    }
+
+    private bool EnsurePlaybackPrepared()
+    {
+        if (!HasSongLink)
+        {
+            return false;
+        }
+
+        var link = SearchResultViewModel.SongLink.Trim();
+        if (_audioReader != null && _waveOut != null && _currentPlayingLink.Equals(link, StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        try
+        {
+            StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+            _audioReader = new MediaFoundationReader(link);
+            _waveOut = new WaveOutEvent();
+            _waveOut.PlaybackStopped += (_, _) =>
+            {
+                _playbackTimer.Stop();
+                IsPlayingSong = false;
+                UpdatePlaybackProgress();
+            };
+            _waveOut.Init(_audioReader);
+            _currentPlayingLink = link;
+            PlaybackDurationSeconds = Math.Max(0, _audioReader.TotalTime.TotalSeconds);
+            PlaybackPositionSeconds = Math.Clamp(PlaybackPositionSeconds, 0, PlaybackDurationSeconds);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StopPlaybackInternal(resetPosition: true, disposePlayer: true);
+            SetTip($"播放器初始化失败：{ex.Message}", true);
+            return false;
         }
     }
 
@@ -474,6 +808,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private void SetTip(string message, bool isError)
     {
+        TipTimestamp = DateTime.Now.ToString("HH:mm:ss");
         TipNormalMessage = isError ? "" : message;
         TipErrorMessage = isError ? message : "";
     }

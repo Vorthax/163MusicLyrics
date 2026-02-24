@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using Avalonia.Platform.Storage;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using CommunityToolkit.Mvvm.Messaging;
 using MusicLyricApp.Core;
 using MusicLyricApp.Core.Service;
 using MusicLyricApp.Models;
+using MusicLyricApp.ViewModels.Messages;
 
 namespace MusicLyricApp.ViewModels;
 
@@ -20,10 +22,12 @@ public partial class BatchSearchViewModel : ViewModelBase
     private readonly IWindowProvider _windowProvider;
 
     private readonly Dictionary<string, SaveVo> _saveMap = new();
+    private readonly Dictionary<string, string> _songLinkMap = new();
 
     public ObservableCollection<BatchSearchItemViewModel> Items { get; } = new();
 
     [ObservableProperty] private string _batchInputText = "";
+    [ObservableProperty] private string _tipTimestamp = "";
     [ObservableProperty] private string _tipNormalMessage = "";
     [ObservableProperty] private string _tipErrorMessage = "";
 
@@ -77,6 +81,7 @@ public partial class BatchSearchViewModel : ViewModelBase
 
                 item.SongName = saveVo.SongVo.Name;
                 item.SongSource = GetSourceName(input.SearchSource);
+                item.SourceEnum = input.SearchSource;
                 item.Singer = string.Join(_settingBean.Config.SingerSeparator, saveVo.SongVo.Singer);
                 item.Album = saveVo.SongVo.Album;
                 item.Status = "Ready";
@@ -86,9 +91,11 @@ public partial class BatchSearchViewModel : ViewModelBase
             else
             {
                 _saveMap.Remove(input.SongId);
+                _songLinkMap.Remove(input.SongId);
 
                 item.SongName = "";
                 item.SongSource = GetSourceName(input.SearchSource);
+                item.SourceEnum = input.SearchSource;
                 item.Singer = "";
                 item.Album = "";
                 item.Status = "Failed";
@@ -164,6 +171,7 @@ public partial class BatchSearchViewModel : ViewModelBase
         foreach (var item in toRemove)
         {
             _saveMap.Remove(item.SongId);
+            _songLinkMap.Remove(item.SongId);
             Items.Remove(item);
         }
 
@@ -219,6 +227,36 @@ public partial class BatchSearchViewModel : ViewModelBase
         }
     }
 
+    [RelayCommand]
+    private async Task ExecuteContextSaveAsync(BatchSearchItemViewModel? item)
+    {
+        if (item != null && !item.IsSelected)
+        {
+            item.IsSelected = true;
+        }
+
+        await ExecuteSaveSelectedAsync();
+    }
+
+    [RelayCommand]
+    private void ExecuteViewDetail(BatchSearchItemViewModel? item)
+    {
+        var target = item ?? Items.FirstOrDefault(x => x.IsSelected);
+        if (target == null)
+        {
+            SetTip("未选择可查看项。", false);
+            return;
+        }
+
+        if (!target.IsSelected)
+        {
+            target.IsSelected = true;
+        }
+
+        WeakReferenceMessenger.Default.Send(new OpenSongDetailMessage(new SongDetailRequest(target.SongId, target.SourceEnum)));
+        WeakReferenceMessenger.Default.Send(new CloseWindowMessage("BatchSearchWindow"));
+    }
+
     private async Task RunBatchSearchAsync(string inputText)
     {
         try
@@ -245,6 +283,7 @@ public partial class BatchSearchViewModel : ViewModelBase
 
     private void SetTip(string message, bool isError)
     {
+        TipTimestamp = System.DateTime.Now.ToString("HH:mm:ss");
         TipNormalMessage = isError ? "" : message;
         TipErrorMessage = isError ? message : "";
     }
@@ -268,5 +307,34 @@ public partial class BatchSearchViewModel : ViewModelBase
             SearchSourceEnum.QQ_MUSIC => "QQ音乐",
             _ => source.ToString()
         };
+    }
+
+    public bool TryGetCachedSaveVo(string songId, out SaveVo saveVo)
+    {
+        return _saveMap.TryGetValue(songId, out saveVo!);
+    }
+
+    public bool TryGetCachedSongLink(string songId, out string link)
+    {
+        return _songLinkMap.TryGetValue(songId, out link!);
+    }
+
+    public void CacheSongLink(string songId, string link)
+    {
+        if (string.IsNullOrWhiteSpace(songId) || string.IsNullOrWhiteSpace(link))
+        {
+            return;
+        }
+
+        _songLinkMap[songId] = link;
+    }
+
+    public void SelectSongsByIds(IEnumerable<string> songIds)
+    {
+        var set = songIds.Where(x => !string.IsNullOrWhiteSpace(x)).ToHashSet();
+        foreach (var item in Items)
+        {
+            item.IsSelected = set.Contains(item.SongId);
+        }
     }
 }

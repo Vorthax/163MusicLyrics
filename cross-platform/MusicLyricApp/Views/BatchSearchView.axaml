@@ -4,6 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:viewModels="clr-namespace:MusicLyricApp.ViewModels"
              mc:Ignorable="d"
+             x:Name="Root"
              x:Class="MusicLyricApp.Views.BatchSearchView"
              x:DataType="viewModels:BatchSearchViewModel"
              d:DesignWidth="900" d:DesignHeight="640">
@@ -35,6 +36,20 @@
                   CanUserSortColumns="True"
                   RowHeight="30"
                   BorderThickness="1">
+            <DataGrid.Styles>
+                <Style Selector="DataGridRow">
+                    <Setter Property="ContextMenu">
+                        <ContextMenu>
+                            <MenuItem Header="保存"
+                                      Command="{Binding #Root.DataContext.ExecuteContextSaveCommand}"
+                                      CommandParameter="{Binding}" />
+                            <MenuItem Header="查看详情"
+                                      Command="{Binding #Root.DataContext.ExecuteViewDetailCommand}"
+                                      CommandParameter="{Binding}" />
+                        </ContextMenu>
+                    </Setter>
+                </Style>
+            </DataGrid.Styles>
             <DataGrid.Columns>
                 <DataGridTemplateColumn Header="" Width="40" CanUserSort="False">
                     <DataGridTemplateColumn.CellTemplate>
@@ -72,6 +87,9 @@
         <Border Grid.Row="3" Padding="8" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="6" Background="#FAFBFC">
             <TextBlock TextTrimming="CharacterEllipsis">
                 <Run Text="【提示】 " Foreground="#344054" />
+                <Run Text="[" Foreground="#98A2B3" />
+                <Run Text="{Binding TipTimestamp}" Foreground="#98A2B3" />
+                <Run Text="] " Foreground="#98A2B3" />
                 <Run Text="{Binding TipNormalMessage}" Foreground="#667085" />
                 <Run Text="{Binding TipErrorMessage}" Foreground="IndianRed" />
                 <Run Text=" | 累计保存歌曲数量: " Foreground="#344054" />

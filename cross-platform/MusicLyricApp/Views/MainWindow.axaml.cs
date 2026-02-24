@@ -121,4 +121,17 @@ public partial class MainWindow : Window, IWindowProvider
             vm.SearchParamViewModel.SearchText = message;
         }
     }
+
+    private void PlaybackSlider_OnTapped(object? sender, TappedEventArgs e)
+    {
+        if (DataContext is not MainWindowViewModel vm)
+        {
+            return;
+        }
+
+        if (vm.ExecuteTogglePlayPauseCommand.CanExecute(null))
+        {
+            vm.ExecuteTogglePlayPauseCommand.Execute(null);
+        }
+    }
 }
