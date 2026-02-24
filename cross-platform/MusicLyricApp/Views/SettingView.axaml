@@ -292,6 +292,12 @@
                                               ItemsSource="{Binding SettingParamViewModel.ThemeModeRules}"
                                               SelectedItem="{Binding SettingParamViewModel.SelectedThemeModeRuleItem}" />
                                 </Grid>
+                                <Grid ColumnDefinitions="140,*" ColumnSpacing="10">
+                                    <TextBlock Grid.Column="0" Text="版本更新" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <Button Width="120" Content="检查更新" Command="{Binding CheckUpdateCommand}" />
+                                    </StackPanel>
+                                </Grid>
                             </StackPanel>
                         </Border>
 

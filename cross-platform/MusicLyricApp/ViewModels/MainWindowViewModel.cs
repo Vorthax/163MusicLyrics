@@ -2,9 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using System.Net;
 using System.Text;
-using System.Text.RegularExpressions;
+using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using Avalonia;
@@ -19,7 +18,6 @@ using MsBox.Avalonia.Enums;
 using NAudio.Wave;
 using MusicLyricApp.Core;
 using MusicLyricApp.Core.Service;
-using MusicLyricApp.Core.Service.Music;
 using MusicLyricApp.Core.Utils;
 using MusicLyricApp.Models;
 using MusicLyricApp.ViewModels.Messages;
@@ -58,6 +56,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private bool _updatingPlaybackPosition;
 
     private readonly StorageService _storageService = new();
+    private readonly UpdateCheckService _updateCheckService = new();
         
     private readonly IWindowProvider _windowProvider;
     
@@ -71,6 +70,8 @@ public partial class MainWindowViewModel : ViewModelBase
     
     private BatchSearchWindow? _batchSearchWindow;
 
+    private FormatConvertWindow? _formatConvertWindow;
+
     // Parameterless constructor for design-time use
     public MainWindowViewModel()
     {
@@ -82,6 +83,7 @@ public partial class MainWindowViewModel : ViewModelBase
         
         SearchParamViewModel.Bind(_settingBean.Param);
         LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
+        SearchParamViewModel.PropertyChanged += SearchParamViewModelOnPropertyChanged;
 
         SearchResultViewModel.PropertyChanged += (_, e) =>
         {
@@ -109,6 +111,7 @@ public partial class MainWindowViewModel : ViewModelBase
 
         SearchParamViewModel.Bind(_settingBean.Param);
         LastSaveFolderPath = _settingBean.Config.LastSaveFolderPath;
+        SearchParamViewModel.PropertyChanged += SearchParamViewModelOnPropertyChanged;
 
         SearchResultViewModel.PropertyChanged += (_, e) =>
         {
@@ -241,6 +244,34 @@ public partial class MainWindowViewModel : ViewModelBase
     public void SaveConfig()
     {
         _storageService.SaveConfig(SettingBean);
+    }
+
+    private void SearchParamViewModelOnPropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName != nameof(SearchParamViewModel.SelectedOutputFormatItem))
+        {
+            return;
+        }
+
+        _ = RefreshCurrentConsoleOutputAsync();
+    }
+
+    private async Task RefreshCurrentConsoleOutputAsync()
+    {
+        if (SearchResultViewModel.SaveVoMap.Count != 1)
+        {
+            return;
+        }
+
+        var saveVo = SearchResultViewModel.SaveVoMap.Values.First();
+        if (saveVo.LyricVo.IsEmpty())
+        {
+            SearchResultViewModel.ResetConsoleOutput(string.Empty);
+            return;
+        }
+
+        var content = await LyricUtils.GetOutputContent(saveVo.LyricVo, SettingBean);
+        SearchResultViewModel.ResetConsoleOutput(GlobalUtils.MergeStr(content));
     }
 
     [RelayCommand]
@@ -625,6 +656,32 @@ public partial class MainWindowViewModel : ViewModelBase
             UseShellExecute = true
         });
     }
+
+    [RelayCommand]
+    private void ExecuteFormatConvert()
+    {
+        if (_formatConvertWindow != null)
+        {
+            if (!_formatConvertWindow.IsVisible)
+            {
+                _formatConvertWindow = null;
+            }
+            else
+            {
+                if (_formatConvertWindow.WindowState == WindowState.Minimized)
+                {
+                    _formatConvertWindow.WindowState = WindowState.Normal;
+                }
+
+                _formatConvertWindow.Activate();
+                return;
+            }
+        }
+
+        _formatConvertWindow = new FormatConvertWindow(SettingBean);
+        _formatConvertWindow.Closed += (_, _) => _formatConvertWindow = null;
+        _formatConvertWindow.Show();
+    }
     
     [RelayCommand]
     private static void ExecuteWiki()
@@ -646,12 +703,6 @@ public partial class MainWindowViewModel : ViewModelBase
         });
     }
 
-    [RelayCommand]
-    private async Task ExecuteVersionCheckAsync()
-    {
-        await DoVersionCheck(true);
-    }
-    
     [RelayCommand]
     private async Task ExecuteShortCutAsync()
     {
@@ -718,56 +769,21 @@ public partial class MainWindowViewModel : ViewModelBase
         
         try
         {
-            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
-
-            var info = HttpUtils.HttpGet<GitHubInfo>(
-                "https://api.github.com/repos/jitwxs/163MusicLyrics/releases/latest", 
-                "application/json", 
-                new Dictionary<string, string>
-                {
-                    { "Accept", "application/vnd.github.v3+json" },
-                    { "User-Agent", BaseNativeApi.Useragent }
-                });
-            
-            if (info == null)
+            var checkResult = _updateCheckService.CheckLatestVersion(AppTitle);
+            if (checkResult.HasUpdate)
             {
-                throw new MusicLyricException(ErrorMsgConst.GET_LATEST_VERSION_FAILED);
-            }
-            if (info.Message != null && info.Message.Contains("API rate limit"))
-            {
-                throw new MusicLyricException(ErrorMsgConst.API_RATE_LIMIT);
-            }
-
-            var curMatch = VersionRegex().Match(AppTitle);
-            var curBigV = int.Parse(curMatch.Groups[1].Value);
-            var curSmallV = int.Parse(curMatch.Groups[2].Value);
-            
-            var originMatch = VersionRegex().Match(info.TagName);
-            var bigV = int.Parse(originMatch.Groups[1].Value);
-            var smallV = int.Parse(originMatch.Groups[2].Value);
-
-            if (bigV > curBigV || (bigV == curBigV && smallV > curSmallV))
-            {
-                var sb = new StringBuilder();
-                sb
-                    .Append($"Tag: {info.TagName}").Append('\t')
-                    .Append($"UpdateTime: {info.PublishedAt.DateTime.AddHours(8)}").Append('\t')
-                    .Append($"DownloadCount: {info.Assets[0].DownloadCount}").Append('\t')
-                    .Append($"Author: {info.Author.Login}")
-                    .Append(Environment.NewLine)
-                    .Append(Environment.NewLine)
-                    .Append(info.Body);
+                var content = UpdateCheckService.BuildReleaseDescription(checkResult.Info);
                 
                 await Dispatcher.UIThread.InvokeAsync(async () =>
                 {
-                    var box = MessageBoxManager.GetMessageBoxStandard("更新说明", sb.ToString(), ButtonEnum.YesNo);
+                    var box = MessageBoxManager.GetMessageBoxStandard("更新说明", content, ButtonEnum.YesNo);
                     var result = await box.ShowWindowAsync();
     
                     if (result == ButtonResult.Yes)
                     {
                         Process.Start(new ProcessStartInfo
                         {
-                            FileName = "https://github.com/jitwxs/163MusicLyrics/releases",
+                            FileName = UpdateCheckService.ReleasePageUrl,
                             UseShellExecute = true
                         });
                     }
@@ -787,9 +803,6 @@ public partial class MainWindowViewModel : ViewModelBase
             _inCheckVersion = false;
         }
     }
-
-    [GeneratedRegex(@"v(\d+)\.(\d+)")]
-    private static partial Regex VersionRegex();
 
     private void UpdateTheme()
     {

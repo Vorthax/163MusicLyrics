@@ -1,27 +1,28 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using MusicLyricApp.Models;
 
 namespace MusicLyricApp.Core.Utils;
 
-public static class SrtUtils
+public static partial class SrtUtils
 {
+    [GeneratedRegex(@"^\s*(\d{1,2}):(\d{2}):(\d{2})[,.](\d{1,3})\s*$")]
+    private static partial Regex SrtTimestampRegex();
+
     /// <summary>
     /// 将 Lrc 格式，转换为 Srt 格式
     /// </summary>
-    /// <param name="inputList">歌词行数据</param>
-    /// <param name="timestampFormat">时间戳格式</param>
-    /// <param name="dotType">时间戳截位规则</param>
-    /// <param name="duration">时长 ms</param>
-    /// <returns></returns>
     public static string LrcToSrt(List<LyricLineVo> inputList, string timestampFormat, DotTypeEnum dotType, long duration)
     {
         if (inputList.Count == 0)
         {
             return "";
         }
-            
+
         var index = 1;
         var sb = new StringBuilder();
 
@@ -30,7 +31,9 @@ public static class SrtUtils
             sb
                 .Append(index++)
                 .Append(Environment.NewLine)
-                .Append(start.PrintTimestamp(timestampFormat, dotType)).Append(" --> ").Append(end.PrintTimestamp(timestampFormat, dotType))
+                .Append(start.PrintTimestamp(timestampFormat, dotType))
+                .Append(" --> ")
+                .Append(end.PrintTimestamp(timestampFormat, dotType))
                 .Append(Environment.NewLine)
                 .Append(content)
                 .Append(Environment.NewLine)
@@ -51,17 +54,15 @@ public static class SrtUtils
                 LyricLineVo startVo = inputList[i], endVo = inputList[i + 1];
 
                 var compareTo = startVo.Timestamp.CompareTo(endVo.Timestamp);
-                    
+
                 if (compareTo == 1)
                 {
-                    // start > end
                     AddLine(startVo.Timestamp, durationTimestamp, startVo.Content);
                 }
                 else if (compareTo == 0)
                 {
-                    // start == end
                     var endTimestamp = durationTimestamp;
-                        
+
                     var j = i + 1;
                     while (++j < inputList.Count)
                     {
@@ -74,7 +75,7 @@ public static class SrtUtils
                         {
                             endTimestamp = inputList[j].Timestamp;
                         }
-                            
+
                         break;
                     }
 
@@ -87,7 +88,6 @@ public static class SrtUtils
                 }
                 else
                 {
-                    // start < end
                     AddLine(startVo.Timestamp, endVo.Timestamp, startVo.Content);
                 }
             }
@@ -101,4 +101,74 @@ public static class SrtUtils
 
         return sb.ToString();
     }
+
+    /// <summary>
+    /// 将 SRT 文本转换为 LRC 文本
+    /// </summary>
+    public static string SrtToLrc(string srtText, string lrcTimestampFormat, DotTypeEnum dotType)
+    {
+        if (string.IsNullOrWhiteSpace(srtText))
+        {
+            return string.Empty;
+        }
+
+        var normalized = srtText.Replace("\r\n", "\n").Replace('\r', '\n');
+        var blocks = normalized.Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
+        var lines = new List<LyricLineVo>();
+
+        foreach (var block in blocks)
+        {
+            var rowList = block.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Trim())
+                .ToList();
+
+            if (rowList.Count < 2)
+            {
+                continue;
+            }
+
+            var rangeRowIndex = rowList[0].Contains("-->") ? 0 : 1;
+            if (rangeRowIndex >= rowList.Count || !rowList[rangeRowIndex].Contains("-->"))
+            {
+                continue;
+            }
+
+            var range = rowList[rangeRowIndex].Split("-->", StringSplitOptions.TrimEntries);
+            if (range.Length != 2)
+            {
+                continue;
+            }
+
+            var startMs = ParseSrtTimestampMs(range[0]);
+            var content = string.Join(" ", rowList.Skip(rangeRowIndex + 1)).Trim();
+            lines.Add(new LyricLineVo(content, new LyricTimestamp(startMs)));
+        }
+
+        lines = lines.OrderBy(x => x.Timestamp.TimeOffset).ToList();
+
+        return string.Join(Environment.NewLine, lines.Select(x => x.Print(lrcTimestampFormat, dotType)));
+    }
+
+    private static long ParseSrtTimestampMs(string text)
+    {
+        var match = SrtTimestampRegex().Match(text);
+        if (!match.Success)
+        {
+            throw new MusicLyricException($"非法 SRT 时间戳: {text}");
+        }
+
+        var h = int.Parse(match.Groups[1].Value, CultureInfo.InvariantCulture);
+        var m = int.Parse(match.Groups[2].Value, CultureInfo.InvariantCulture);
+        var s = int.Parse(match.Groups[3].Value, CultureInfo.InvariantCulture);
+        var msText = match.Groups[4].Value;
+        var ms = msText.Length switch
+        {
+            1 => int.Parse(msText, CultureInfo.InvariantCulture) * 100,
+            2 => int.Parse(msText, CultureInfo.InvariantCulture) * 10,
+            _ => int.Parse(msText[..3], CultureInfo.InvariantCulture)
+        };
+
+        return ((h * 3600L + m * 60L + s) * 1000L) + ms;
+    }
 }
+

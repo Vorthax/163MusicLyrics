@@ -1,15 +1,20 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Avalonia;
+using Avalonia.Controls.ApplicationLifetimes;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Avalonia.Platform.Storage;
 using MusicLyricApp.Core;
 using MusicLyricApp.Core.Service;
 using MusicLyricApp.Models;
+using MsBox.Avalonia;
+using MsBox.Avalonia.Enums;
 using NLog;
 
 namespace MusicLyricApp.ViewModels;
@@ -29,6 +34,7 @@ public partial class SettingViewModel : ViewModelBase
     private readonly SettingBean _settingBean;
     private readonly IWindowProvider? _windowProvider;
     private readonly StorageService _storageService = new();
+    private readonly UpdateCheckService _updateCheckService = new();
     
     private static readonly Logger Logger = LogManager.GetCurrentClassLogger();
 
@@ -181,6 +187,49 @@ public partial class SettingViewModel : ViewModelBase
         SettingParamViewModel.SearchCacheFolderPath = path;
         _storageService.SaveConfig(_settingBean);
         SettingTips = $"已更新缓存目录：{path}";
+    }
+
+    [RelayCommand]
+    private async Task CheckUpdateAsync()
+    {
+        try
+        {
+            var checkResult = _updateCheckService.CheckLatestVersion(GetCurrentVersionTitle());
+            if (checkResult.HasUpdate)
+            {
+                var content = UpdateCheckService.BuildReleaseDescription(checkResult.Info);
+                var box = MessageBoxManager.GetMessageBoxStandard("更新说明", content, ButtonEnum.YesNo);
+                var result = await box.ShowWindowAsync();
+                if (result == ButtonResult.Yes)
+                {
+                    Process.Start(new ProcessStartInfo
+                    {
+                        FileName = UpdateCheckService.ReleasePageUrl,
+                        UseShellExecute = true
+                    });
+                }
+            }
+            else
+            {
+                SettingTips = ErrorMsgConst.THIS_IS_LATEST_VERSION;
+            }
+        }
+        catch (Exception ex)
+        {
+            SettingTips = ex.Message;
+        }
+    }
+
+    private static string GetCurrentVersionTitle()
+    {
+        if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop &&
+            desktop.MainWindow != null &&
+            !string.IsNullOrWhiteSpace(desktop.MainWindow.Title))
+        {
+            return desktop.MainWindow.Title;
+        }
+
+        return "MusicLyricApp v0.0";
     }
 
     [RelayCommand]
