@@ -77,6 +77,11 @@ public class ConfigBean
     public bool AutoCheckUpdate = true;
 
     /// <summary>
+    /// 关闭主窗口时是否二次确认
+    /// </summary>
+    public bool ConfirmBeforeExit = true;
+
+    /// <summary>
     /// 保存时跳过纯音乐
     /// </summary>
     public bool IgnorePureMusicInSave = true;

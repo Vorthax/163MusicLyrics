@@ -72,12 +72,19 @@ public partial class MainWindow : Window, IWindowProvider
     {
         base.OnClosing(e);
 
-        if (DataContext is not MainWindowViewModel vm) return;
+        if (DataContext is not MainWindowViewModel vm)
+        {
+            return;
+        }
 
-        // 阻止默认关闭
+        if (!vm.SettingBean.Config.ConfirmBeforeExit)
+        {
+            vm.SaveConfig();
+            return;
+        }
+
         e.Cancel = true;
 
-        // 弹出消息框（同步等待）
         var box = MessageBoxManager.GetMessageBoxStandard("退出提示", "你确定要退出吗？", ButtonEnum.YesNo);
         var result = await box.ShowAsync();
 

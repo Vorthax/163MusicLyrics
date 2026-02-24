@@ -268,6 +268,9 @@
                                     <CheckBox Content="自动检查更新"
                                               IsChecked="{Binding SettingParamViewModel.AutoCheckUpdate, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               Margin="0,0,12,8" />
+                                    <CheckBox Content="关闭软件时二次确认"
+                                              IsChecked="{Binding SettingParamViewModel.ConfirmBeforeExit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                              Margin="0,0,12,8" />
                                 </WrapPanel>
                                 <Grid ColumnDefinitions="140,*" ColumnSpacing="10">
                                     <TextBlock Grid.Column="0" Text="主题模式" VerticalAlignment="Center" />

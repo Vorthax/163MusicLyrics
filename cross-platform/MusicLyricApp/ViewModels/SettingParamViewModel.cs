@@ -234,6 +234,14 @@ public partial class SettingParamViewModel : ViewModelBase
         _settingBean.Config.SingerSeparator = newValue;
     }
 
+    // 21.2 关闭时确认
+    [ObservableProperty] private bool _confirmBeforeExit;
+
+    partial void OnConfirmBeforeExitChanged(bool value)
+    {
+        _settingBean.Config.ConfirmBeforeExit = value;
+    }
+
     // 21.1 文件名歌手数上限（-1 不截断）
     [ObservableProperty] private int _singerCountLimit;
 
@@ -324,6 +332,7 @@ public partial class SettingParamViewModel : ViewModelBase
         AggregatedBlurSearch = _settingBean.Config.AggregatedBlurSearch;
         AutoReadClipboard = _settingBean.Config.AutoReadClipboard;
         AutoCheckUpdate = _settingBean.Config.AutoCheckUpdate;
+        ConfirmBeforeExit = _settingBean.Config.ConfirmBeforeExit;
         QqMusicCookie = _settingBean.Config.QQMusicCookie;
         NetEaseCookie = _settingBean.Config.NetEaseCookie;
         SingerSeparator = _settingBean.Config.SingerSeparator;
