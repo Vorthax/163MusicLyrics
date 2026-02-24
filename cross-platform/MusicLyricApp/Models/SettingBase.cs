@@ -57,6 +57,11 @@ public class ConfigBean
     public string SingerSeparator = ",";
 
     /// <summary>
+    /// 文件名歌手数量上限（-1 表示不截断）
+    /// </summary>
+    public int SingerCountLimit = -1;
+
+    /// <summary>
     /// 聚合模糊搜索
     /// </summary>
     public bool AggregatedBlurSearch = false;

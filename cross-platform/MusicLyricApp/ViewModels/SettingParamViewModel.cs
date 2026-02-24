@@ -234,6 +234,14 @@ public partial class SettingParamViewModel : ViewModelBase
         _settingBean.Config.SingerSeparator = newValue;
     }
 
+    // 21.1 文件名歌手数上限（-1 不截断）
+    [ObservableProperty] private int _singerCountLimit;
+
+    partial void OnSingerCountLimitChanged(int value)
+    {
+        _settingBean.Config.SingerCountLimit = value < -1 ? -1 : value;
+    }
+
     // 22. 歌词合并符
     [ObservableProperty] private string _lrcMergeSeparator;
 
@@ -319,6 +327,7 @@ public partial class SettingParamViewModel : ViewModelBase
         QqMusicCookie = _settingBean.Config.QQMusicCookie;
         NetEaseCookie = _settingBean.Config.NetEaseCookie;
         SingerSeparator = _settingBean.Config.SingerSeparator;
+        SingerCountLimit = _settingBean.Config.SingerCountLimit;
         LrcMergeSeparator = _settingBean.Param.LrcMergeSeparator;
         SaveFolderPath = _settingBean.Config.LastSaveFolderPath;
         DownloadCoverAndSongLinkOnSave = _settingBean.Config.DownloadCoverAndSongLinkOnSave;

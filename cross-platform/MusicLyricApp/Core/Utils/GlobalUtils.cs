@@ -192,7 +192,7 @@ public static partial class GlobalUtils
     /**
      * 获取输出文件名
      */
-    public static string GetOutputName(SaveVo saveVo, string format, string singerSeparator)
+    public static string GetOutputName(SaveVo saveVo, string format, string singerSeparator, int singerCountLimit = -1)
     {
         if (saveVo == null)
         {
@@ -206,11 +206,17 @@ public static partial class GlobalUtils
             throw new MusicLyricException("GetOutputName but songVo is null");
         }
 
+        var singers = songVo.Singer;
+        if (singerCountLimit > 0 && singers != null && singers.Length > singerCountLimit)
+        {
+            singers = singers.Take(singerCountLimit).ToArray();
+        }
+
         var outputName = format
             .Replace("${index}", saveVo.Index.ToString())
             .Replace("${id}", songVo.DisplayId)
             .Replace("${name}", ControlLength(songVo.Name))
-            .Replace("${singer}", ControlLength(string.Join(singerSeparator, songVo.Singer)))
+            .Replace("${singer}", ControlLength(string.Join(singerSeparator, singers)))
             .Replace("${album}", ControlLength(songVo.Album));
 
         outputName = ResolveCustomFunction(outputName);

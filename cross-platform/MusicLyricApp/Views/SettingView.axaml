@@ -187,13 +187,19 @@
                                               IsChecked="{Binding SettingParamViewModel.DownloadCoverAndSongLinkOnSave, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                               Margin="0,0,12,8" />
                                 </WrapPanel>
-                                <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                                <Grid ColumnDefinitions="140,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="歌手分隔符" VerticalAlignment="Center" />
                                     <TextBox Grid.Row="0" Grid.Column="1"
                                              Text="{Binding SettingParamViewModel.SingerSeparator, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="保存文件名" VerticalAlignment="Center" />
                                     <TextBox Grid.Row="1" Grid.Column="1"
                                              Text="{Binding SettingParamViewModel.OutputFileNameFormat, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="歌手数上限" VerticalAlignment="Center" />
+                                    <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                        <TextBox Width="100"
+                                                 Text="{Binding SettingParamViewModel.SingerCountLimit, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                        <TextBlock Text="-1 表示不截断" Foreground="#667085" VerticalAlignment="Center" />
+                                    </StackPanel>
                                 </Grid>
                             </StackPanel>
                         </Border>

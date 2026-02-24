@@ -267,7 +267,7 @@ public class StorageService : IStorageService
         }
 
         var baseName = GlobalUtils.GetOutputName(saveVo, settingBean.Config.OutputFileNameFormat,
-            settingBean.Config.SingerSeparator);
+            settingBean.Config.SingerSeparator, settingBean.Config.SingerCountLimit);
 
         try
         {
@@ -439,7 +439,7 @@ public class StorageService : IStorageService
         var extension = settingBean.Param.OutputFileFormat.ToDescription().ToLower();
         var encoding = GlobalUtils.GetEncoding(settingBean.Param.Encoding);
         var filename = GlobalUtils.GetOutputName(saveVo, settingBean.Config.OutputFileNameFormat,
-            settingBean.Config.SingerSeparator);
+            settingBean.Config.SingerSeparator, settingBean.Config.SingerCountLimit);
 
         var res = await LyricUtils.GetOutputContent(saveVo.LyricVo, settingBean);
 
