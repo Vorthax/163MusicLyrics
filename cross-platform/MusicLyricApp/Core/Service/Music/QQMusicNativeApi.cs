@@ -165,26 +165,43 @@ public class QQMusicNativeApi(Func<string> cookieFunc) : BaseNativeApi(cookieFun
             string decompressText;
             try
             {
-                decompressText = Decrypter.DecryptLyrics(text) ?? "";
+                var trimmed = text.Trim();
+                if (!Decrypter.IsHex(trimmed))
+                {
+                    _logger.Warn("QQMusicNativeApi GetLyric LyricContent not hex, songId: {SongId}, len: {Len}", songId, trimmed.Length);
+                    decompressText = trimmed;
+                }
+                else
+                {
+                    decompressText = Decrypter.DecryptLyrics(trimmed) ?? "";
+                }
             }
             catch(Exception ex)
             {
-                _logger.Error(ex, "QQMusicNativeApi GetLyric DecryptLyrics failed, songId: {SongId}", songId);
+                _logger.Error(ex, "QQMusicNativeApi GetLyric DecryptLyrics failed, songId: {SongId}, len: {Len}", songId, text.Length);
                 continue;
             }
 
             var s = "";
-            if (decompressText.Contains("<?xml"))
+            if (decompressText.Contains("<?xml", StringComparison.Ordinal))
             {
-                var doc = XmlUtils.Create(decompressText);
-
-                var subDict = new Dictionary<string, XmlNode>();
-
-                XmlUtils.RecursionFindElement(doc, VerbatimXmlMappingDict, subDict);
-
-                if (subDict.TryGetValue("lyric", out var d))
+                try
                 {
-                    s = d.Attributes?["LyricContent"]?.InnerText;
+                    var doc = XmlUtils.Create(decompressText);
+
+                    var subDict = new Dictionary<string, XmlNode>();
+
+                    XmlUtils.RecursionFindElement(doc, VerbatimXmlMappingDict, subDict);
+
+                    if (subDict.TryGetValue("lyric", out var d))
+                    {
+                        s = d.Attributes?["LyricContent"]?.InnerText;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "QQMusicNativeApi GetLyric parse decompressed XML failed, songId: {SongId}, len: {Len}", songId, decompressText.Length);
+                    s = decompressText;
                 }
             }
             else

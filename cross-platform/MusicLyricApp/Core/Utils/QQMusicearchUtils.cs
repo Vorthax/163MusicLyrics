@@ -66,6 +66,26 @@ public class Decrypter
 
         return bytes;
     }
+
+    public static bool IsHex(string s)
+    {
+        if (string.IsNullOrWhiteSpace(s) || (s.Length % 2) != 0)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < s.Length; i++)
+        {
+            char c = s[i];
+            bool ok = (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+            if (!ok)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
 
 public static class DESHelper

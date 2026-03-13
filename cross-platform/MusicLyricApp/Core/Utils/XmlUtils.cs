@@ -14,6 +14,8 @@ public static partial class XmlUtils
     /// <returns></returns>
     public static XmlDocument Create(string content)
     {
+        content = NormalizeXmlInput(content);
+
         content = RemoveIllegalContent(content);
 
         content = ReplaceAmp(content);
@@ -27,6 +29,22 @@ public static partial class XmlUtils
         doc.LoadXml(content);
 
         return doc;
+    }
+
+    private static string NormalizeXmlInput(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+        {
+            return content;
+        }
+
+        int idx = content.IndexOf("<?xml", System.StringComparison.Ordinal);
+        if (idx > 0)
+        {
+            content = content[idx..];
+        }
+
+        return content.TrimStart('\u0000', '\uFEFF');
     }
 
     private static string ReplaceAmp(string content)
