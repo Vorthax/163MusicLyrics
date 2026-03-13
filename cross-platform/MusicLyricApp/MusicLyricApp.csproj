@@ -26,12 +26,14 @@
         <PackageReference Include="CommunityToolkit.Mvvm" Version="8.2.1"/>
         <PackageReference Include="hyjiacan.py4n" Version="4.0.0" />
         <PackageReference Include="MessageBox.Avalonia" Version="3.2.0" />
-        <PackageReference Include="NAudio" Version="2.2.1" />
         <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
         <PackageReference Include="NLog" Version="5.4.0" />
         <PackageReference Include="NTextCat" Version="0.3.65" />
         <PackageReference Include="SharpZipLib" Version="1.4.2" />
         <PackageReference Include="ToolGood.Words" Version="3.1.0.2" />
+        <PackageReference Include="LibVLCSharp" Version="3.9.6" />
+        <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23" />
+        <PackageReference Include="VideoLAN.LibVLC.Mac" Version="3.1.3.1" />
     </ItemGroup>
 
     <ItemGroup>
