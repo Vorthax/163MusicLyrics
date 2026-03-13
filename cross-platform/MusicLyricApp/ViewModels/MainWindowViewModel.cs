@@ -26,6 +26,7 @@ namespace MusicLyricApp.ViewModels;
 
 public partial class MainWindowViewModel : ViewModelBase
 {
+    public bool IsPlaybackSupported => OperatingSystem.IsWindows();
     public SearchParamViewModel SearchParamViewModel { get; } = new();
 
     public SearchResultViewModel SearchResultViewModel { get; } = new();
@@ -50,7 +51,7 @@ public partial class MainWindowViewModel : ViewModelBase
     private readonly SearchService _searchService;
 
     private readonly DispatcherTimer _playbackTimer = new() { Interval = TimeSpan.FromMilliseconds(250) };
-    private readonly IPlaybackService _playbackService = new LibVlcPlaybackService();
+    private readonly IPlaybackService _playbackService = CreatePlaybackService();
     private bool _updatingPlaybackPosition;
 
     private readonly StorageService _storageService = new();
@@ -146,6 +147,32 @@ public partial class MainWindowViewModel : ViewModelBase
         {
             ThreadPool.QueueUserWorkItem(p => _ = DoVersionCheck(false));
         }
+    }
+
+    private static IPlaybackService CreatePlaybackService()
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            return new LibVlcPlaybackService();
+        }
+
+        return new NullPlaybackService();
+    }
+
+    private sealed class NullPlaybackService : IPlaybackService
+    {
+        public bool HasMedia => false;
+        public bool IsPlaying => false;
+        public double PositionSeconds => 0;
+        public double DurationSeconds => 0;
+        public string CurrentMediaUrl => string.Empty;
+
+        public bool Prepare(string url) => false;
+        public void Play() { }
+        public void Pause() { }
+        public void Stop() { }
+        public void Seek(double seconds) { }
+        public void Dispose() { }
     }
     
     private async Task ProcessBlurSearchResults(string ids)
@@ -513,6 +540,12 @@ public partial class MainWindowViewModel : ViewModelBase
     [RelayCommand]
     private void ExecutePlaySong()
     {
+        if (!IsPlaybackSupported)
+        {
+            SetTip("当前平台不支持内置播放器。", true);
+            return;
+        }
+
         if (!HasSongLink)
         {
             SetTip("\u5f53\u524d\u6b4c\u66f2\u6ca1\u6709\u53ef\u64ad\u653e\u7684\u76f4\u94fe\u3002", true);
@@ -608,6 +641,12 @@ public partial class MainWindowViewModel : ViewModelBase
 
     private bool EnsurePlaybackPrepared()
     {
+        if (!IsPlaybackSupported)
+        {
+            SetTip("当前平台不支持内置播放器。", true);
+            return false;
+        }
+
         if (!HasSongLink)
         {
             return false;

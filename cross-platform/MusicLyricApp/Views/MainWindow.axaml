@@ -87,11 +87,11 @@
                             <MenuItem Header="&#x64AD;&#x653E;&#x6B4C;&#x66F2;"
                                       Command="{Binding ExecutePlaySongCommand}"
                                       IsEnabled="{Binding HasSongLink}"
-                                      IsVisible="{Binding HasSongLink}" />
+                                      IsVisible="{Binding IsPlaybackSupported}" />
                             <MenuItem Header="&#x505C;&#x6B62;&#x64AD;&#x653E;"
                                       Command="{Binding ExecuteStopSongCommand}"
                                       IsEnabled="{Binding IsPlayingSong}"
-                                      IsVisible="{Binding HasSongLink}" />
+                                      IsVisible="{Binding IsPlaybackSupported}" />
                         </ContextMenu>
                     </Border.ContextMenu>
                     <Grid ColumnDefinitions="*,96" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="8">
@@ -149,7 +149,7 @@
                               Grid.ColumnSpan="2"
                               ColumnDefinitions="*,Auto"
                               ColumnSpacing="8"
-                              IsVisible="{Binding HasSongLink}">
+                              IsVisible="{Binding IsPlaybackSupported}">
                             <Slider Minimum="0"
                                     Name="PlaybackSlider"
                                     Maximum="{Binding PlaybackDurationSeconds}"
