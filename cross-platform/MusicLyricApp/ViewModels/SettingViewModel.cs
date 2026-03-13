@@ -146,6 +146,51 @@ public partial class SettingViewModel : ViewModelBase
     }
 
     [RelayCommand]
+    private async Task TestProxyAsync()
+    {
+        if (SettingParamViewModel.SelectedNetworkProxyModeItem?.Value != NetworkProxyModeEnum.HTTP_PROXY)
+        {
+            SettingTips = "请先选择 HTTP 代理模式";
+            return;
+        }
+
+        if (!string.IsNullOrWhiteSpace(SettingParamViewModel.ProxyPortError))
+        {
+            SettingTips = SettingParamViewModel.ProxyPortError;
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_settingBean.Config.ProxyHost) || _settingBean.Config.ProxyPort <= 0)
+        {
+            SettingTips = "代理地址或端口无效";
+            return;
+        }
+
+        SettingTips = "正在测试代理连接...";
+        try
+        {
+            NetworkClientFactory.Configure(_settingBean.Config);
+            using var client = NetworkClientFactory.CreateHttpClient(8);
+            using var resp = await client.GetAsync("https://c.y.qq.com/");
+            SettingTips = resp.IsSuccessStatusCode
+                ? "代理测试成功"
+                : $"代理测试失败：HTTP {(int)resp.StatusCode}";
+        }
+        catch (Exception ex)
+        {
+            SettingTips = $"代理测试失败：{ex.Message}";
+        }
+    }
+
+    [RelayCommand]
+    private void ApplyProxy()
+    {
+        NetworkClientFactory.Configure(_settingBean.Config);
+        _storageService.SaveConfig(_settingBean);
+        SettingTips = "代理设置已应用";
+    }
+
+    [RelayCommand]
     private async Task SelectSaveFolderAsync()
     {
         if (_windowProvider == null)

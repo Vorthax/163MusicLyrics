@@ -146,14 +146,46 @@
                     <StackPanel Spacing="10" Margin="10">
                         <Border Padding="12" BorderBrush="#D0D7DE" BorderThickness="1" CornerRadius="8" Background="#FFFFFF">
                             <StackPanel Spacing="8">
-                                <TextBlock Text="代理模式" FontWeight="SemiBold" />
-                                <TextBlock Text="系统代理：跟随系统/全局 VPN；直接连接：禁用系统代理，直连目标服务。" Foreground="#667085" TextWrapping="Wrap" />
-                                <Grid ColumnDefinitions="140,*" ColumnSpacing="10">
-                                    <TextBlock Grid.Column="0" Text="连接方式" VerticalAlignment="Center" />
-                                    <ComboBox Grid.Column="1"
+                                <TextBlock Text="代理设置" FontWeight="SemiBold" />
+                                <TextBlock Text="系统代理：跟随系统/全局 VPN；直接连接：禁用系统代理；HTTP 代理：使用手动填写的代理服务器。" Foreground="#667085" TextWrapping="Wrap" />
+                                <Grid ColumnDefinitions="140,*,80,*" RowDefinitions="Auto,Auto,Auto" ColumnSpacing="10" RowSpacing="8">
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="类型" VerticalAlignment="Center" />
+                                    <ComboBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="3"
                                               ItemsSource="{Binding SettingParamViewModel.NetworkProxyModes}"
                                               SelectedItem="{Binding SettingParamViewModel.SelectedNetworkProxyModeItem}" />
+
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="地址" VerticalAlignment="Center" />
+                                    <TextBox Grid.Row="1" Grid.Column="1"
+                                             IsEnabled="{Binding SettingParamViewModel.IsHttpProxySelected}"
+                                             Text="{Binding SettingParamViewModel.ProxyHost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Grid.Row="1" Grid.Column="2" Text="端口" VerticalAlignment="Center" />
+                                    <TextBox Grid.Row="1" Grid.Column="3"
+                                             IsEnabled="{Binding SettingParamViewModel.IsHttpProxySelected}"
+                                             Text="{Binding SettingParamViewModel.ProxyPortText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="用户名" VerticalAlignment="Center" />
+                                    <TextBox Grid.Row="2" Grid.Column="1"
+                                             IsEnabled="{Binding SettingParamViewModel.IsHttpProxySelected}"
+                                             Text="{Binding SettingParamViewModel.ProxyUsername, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                    <TextBlock Grid.Row="2" Grid.Column="2" Text="密码" VerticalAlignment="Center" />
+                                    <TextBox Grid.Row="2" Grid.Column="3"
+                                             IsEnabled="{Binding SettingParamViewModel.IsHttpProxySelected}"
+                                             PasswordChar="*"
+                                             Text="{Binding SettingParamViewModel.ProxyPassword, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                                 </Grid>
+
+                                <TextBlock Text="{Binding SettingParamViewModel.ProxyPortError}" Foreground="IndianRed" />
+
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <Button Width="90"
+                                            Content="测试"
+                                            Command="{Binding TestProxyCommand}"
+                                            IsEnabled="{Binding SettingParamViewModel.IsHttpProxySelected}" />
+                                    <Button Width="90"
+                                            Content="应用"
+                                            Command="{Binding ApplyProxyCommand}" />
+                                    <TextBlock Text="更改后部分请求需重启应用才会完全生效" Foreground="#667085" VerticalAlignment="Center" />
+                                </StackPanel>
                             </StackPanel>
                         </Border>
                     </StackPanel>

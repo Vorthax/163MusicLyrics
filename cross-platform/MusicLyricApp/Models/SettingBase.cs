@@ -8,7 +8,8 @@ namespace MusicLyricApp.Models;
 public enum NetworkProxyModeEnum
 {
     SYSTEM_PROXY = 0,
-    DIRECT_CONNECT = 1
+    DIRECT_CONNECT = 1,
+    HTTP_PROXY = 2
 }
 
 
@@ -141,6 +142,26 @@ public class ConfigBean
     /// 代理模式
     /// </summary>
     public NetworkProxyModeEnum NetworkProxyMode = NetworkProxyModeEnum.SYSTEM_PROXY;
+
+    /// <summary>
+    /// HTTP 代理地址
+    /// </summary>
+    public string ProxyHost = "";
+
+    /// <summary>
+    /// HTTP 代理端口
+    /// </summary>
+    public int ProxyPort = 80;
+
+    /// <summary>
+    /// HTTP 代理用户名
+    /// </summary>
+    public string ProxyUsername = "";
+
+    /// <summary>
+    /// HTTP 代理密码
+    /// </summary>
+    public string ProxyPassword = "";
 
     /// <summary>
     /// 输出的歌词类型列表

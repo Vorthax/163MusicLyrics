@@ -77,7 +77,7 @@ public partial class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel()
     {
         _settingBean = new StorageService().ReadAppConfig();
-        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
+        NetworkClientFactory.Configure(_settingBean.Config);
         _searchService = new SearchService(_settingBean);
         _windowProvider = null;
         _downloadManagerViewModel = new BatchSearchViewModel(_settingBean, _searchService, new StorageService(), null!);
@@ -103,7 +103,7 @@ public partial class MainWindowViewModel : ViewModelBase
         _windowProvider = windowProvider;
 
         _settingBean = _storageService.ReadAppConfig();
-        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
+        NetworkClientFactory.Configure(_settingBean.Config);
 
         _searchService = new SearchService(_settingBean);
         

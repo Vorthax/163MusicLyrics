@@ -34,11 +34,15 @@ public partial class SettingParamViewModel : ViewModelBase
     public ObservableCollection<EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum>> NetworkProxyModes { get; } =
     [
         new() { Description = "系统代理", Value = NetworkProxyModeEnum.SYSTEM_PROXY },
-        new() { Description = "直接连接", Value = NetworkProxyModeEnum.DIRECT_CONNECT }
+        new() { Description = "直接连接", Value = NetworkProxyModeEnum.DIRECT_CONNECT },
+        new() { Description = "HTTP 代理", Value = NetworkProxyModeEnum.HTTP_PROXY }
     ];
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsHttpProxySelected))]
     private EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum> _selectedNetworkProxyModeItem;
+
+    public bool IsHttpProxySelected => SelectedNetworkProxyModeItem?.Value == NetworkProxyModeEnum.HTTP_PROXY;
 
     partial void OnSelectedNetworkProxyModeItemChanged(EnumDisplayHelper.EnumDisplayItem<NetworkProxyModeEnum>? value)
     {
@@ -48,7 +52,64 @@ public partial class SettingParamViewModel : ViewModelBase
         }
 
         _settingBean.Config.NetworkProxyMode = value.Value;
-        NetworkClientFactory.Configure(value.Value);
+        NetworkClientFactory.Configure(_settingBean.Config);
+    }
+
+    // 0.1 HTTP 代理地址
+    [ObservableProperty] private string _proxyHost;
+
+    partial void OnProxyHostChanged(string value)
+    {
+        _settingBean.Config.ProxyHost = value;
+        if (IsHttpProxySelected)
+        {
+            NetworkClientFactory.Configure(_settingBean.Config);
+        }
+    }
+
+    // 0.2 HTTP 代理端口
+    [ObservableProperty] private string _proxyPortText;
+
+    [ObservableProperty] private string _proxyPortError;
+
+    partial void OnProxyPortTextChanged(string value)
+    {
+        if (!int.TryParse(value, out var port) || port < 1 || port > 65535)
+        {
+            ProxyPortError = "端口范围为 1 - 65535";
+            return;
+        }
+
+        ProxyPortError = string.Empty;
+        _settingBean.Config.ProxyPort = port;
+        if (IsHttpProxySelected)
+        {
+            NetworkClientFactory.Configure(_settingBean.Config);
+        }
+    }
+
+    // 0.3 HTTP 代理用户名
+    [ObservableProperty] private string _proxyUsername;
+
+    partial void OnProxyUsernameChanged(string value)
+    {
+        _settingBean.Config.ProxyUsername = value;
+        if (IsHttpProxySelected)
+        {
+            NetworkClientFactory.Configure(_settingBean.Config);
+        }
+    }
+
+    // 0.4 HTTP 代理密码
+    [ObservableProperty] private string _proxyPassword;
+
+    partial void OnProxyPasswordChanged(string value)
+    {
+        _settingBean.Config.ProxyPassword = value;
+        if (IsHttpProxySelected)
+        {
+            NetworkClientFactory.Configure(_settingBean.Config);
+        }
     }
 
     // 1. 毫秒截位规则
@@ -340,7 +401,7 @@ public partial class SettingParamViewModel : ViewModelBase
     public void Bind(SettingBean settingBean)
     {
         _settingBean = settingBean;
-        NetworkClientFactory.Configure(_settingBean.Config.NetworkProxyMode);
+        NetworkClientFactory.Configure(_settingBean.Config);
 
         SelectedFileConflictStrategyItem = FileConflictStrategies.First(item => Equals(item.Value, _settingBean.Config.FileConflictStrategy));
         IsConflictSuffixEnabled = _settingBean.Config.FileConflictStrategy == FileConflictStrategyEnum.APPEND_NUMBER;
@@ -348,6 +409,11 @@ public partial class SettingParamViewModel : ViewModelBase
             ? " ({n})"
             : _settingBean.Config.FileConflictSuffixPattern;
         SelectedNetworkProxyModeItem = NetworkProxyModes.First(item => Equals(item.Value, _settingBean.Config.NetworkProxyMode));
+        ProxyHost = _settingBean.Config.ProxyHost;
+        ProxyPortText = (_settingBean.Config.ProxyPort <= 0 ? 80 : _settingBean.Config.ProxyPort).ToString();
+        ProxyPortError = string.Empty;
+        ProxyUsername = _settingBean.Config.ProxyUsername;
+        ProxyPassword = _settingBean.Config.ProxyPassword;
         SelectedDotTypeItem = DotTypes.First(item => Equals(item.Value, _settingBean.Config.DotType));
         SelectedTransLyricLostRuleItem = TransLyricLostRules.First(item => Equals(item.Value, _settingBean.Config.TransConfig.LostRule));
         SelectedChineseProcessRuleItem = ChineseProcessRules.First(item => Equals(item.Value, _settingBean.Config.ChineseProcessRule));
